@@ -1,0 +1,11 @@
+# Local project docs and tooling — keep private, never publish
+CLAUDE.md
+PLAN.md
+.claude/
+
+# Backup of the live file and the shelved "Iridescent" redesign — not for publishing
+index.prev.html
+redesign/
+
+# macOS clutter
+.DS_Store

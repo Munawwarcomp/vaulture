@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0d18" />
+<title>Vaulture — One Vault. Same Odds.</title>
+<meta name="application-name" content="Vaulture" />
+<meta name="apple-mobile-web-app-title" content="Vaulture" />
+<meta name="description" content="Crack the same daily vault as everyone else. Build your crew, chase the highest take, and share your run." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%92%B0</text></svg>">
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://vaulture.fun/" />
+<meta property="og:title" content="Vaulture" />
+<meta property="og:site_name" content="Vaulture" />
+<meta property="og:description" content="Crack the same daily vault as everyone else. Build your crew, chase the highest take, and share your run." />
+<meta property="og:image" content="https://vaulture.fun/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Vaulture — a daily shared-seed vault-cracking card game" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Vaulture" />
+<meta name="twitter:description" content="Crack the same daily vault as everyone else. Build your crew, chase the highest take, and share your run." />
+<meta name="twitter:image" content="https://vaulture.fun/og.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ============================= THEME ============================= */
+:root{
+  --bg:#0a0d18; --bg2:#10152a; --panel:#161c33; --panel2:#1d2542;
+  --line:#2a3358; --ink:#eef2ff; --dim:#9aa6cf; --faint:#6b76a3;
+  --gold:#ffce54; --gold2:#ffb01f; --good:#4be3a6; --bad:#ff5d73;
+  --shadow:0 12px 30px rgba(0,0,0,.5);
+  /* crew colors (keyed by visible codename; internal ids unchanged) */
+  --c-Spark:#34e0e0; --c-Rook:#b06bff; --c-Ram:#ff8a3d;
+  --c-Veil:#ff5fa2; --c-Dash:#7ee04a;
+  --disp:"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;height:100%;}
+body{
+  font-family:var(--disp); color:var(--ink); background:var(--bg);
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, #1a2348 0%, rgba(26,35,72,0) 60%),
+    radial-gradient(900px 500px at 100% 110%, #2a1840 0%, rgba(42,24,64,0) 55%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0 2px, transparent 2px 22px);
+  overflow:hidden; user-select:none; -webkit-user-select:none;
+}
+/* phone column */
+#app{
+  position:relative; width:100%; max-width:460px; margin:0 auto;
+  height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:0 0 0 1px rgba(255,255,255,.04), 0 0 80px rgba(0,0,0,.6);
+}
+.screen{position:absolute; inset:0; display:none; flex-direction:column;
+  padding:max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));}
+.screen.active{display:flex; animation:fadein .35s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+
+/* ============================= TYPE / BITS ============================= */
+.kicker{font:700 11px/1 var(--mono); letter-spacing:.34em; color:var(--gold); text-transform:uppercase;}
+.num{font-family:var(--mono); font-weight:800; font-variant-numeric:tabular-nums;}
+.btn{
+  font:700 15px var(--disp); border:none; border-radius:14px; padding:15px 18px;
+  background:linear-gradient(180deg,var(--gold),var(--gold2)); color:#241a00;
+  box-shadow:0 6px 0 #a9730a, 0 10px 22px rgba(255,176,31,.28); cursor:pointer;
+  transition:transform .08s ease, box-shadow .08s ease; width:100%;
+}
+.btn:active{transform:translateY(4px); box-shadow:0 2px 0 #a9730a, 0 6px 14px rgba(255,176,31,.25);}
+.btn[disabled]{filter:grayscale(.7) brightness(.7); box-shadow:none; cursor:default; transform:none;}
+.btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line); box-shadow:none;}
+.btn.ghost:active{transform:translateY(2px); background:rgba(255,255,255,.04);}
+.btn.danger{background:linear-gradient(180deg,#ff7a8c,#ff4257); color:#fff; box-shadow:0 6px 0 #9c1f2e,0 10px 22px rgba(255,66,87,.25);}
+.btn.row{display:flex; align-items:center; justify-content:center; gap:8px;}
+.pill{display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:999px;
+  background:var(--panel); border:1px solid var(--line); font:700 12px var(--mono); color:var(--dim);}
+
+/* ============================= INTRO ============================= */
+#intro{justify-content:center; align-items:center; text-align:center; gap:8px;}
+.logo{font:700 40px/0.95 var(--disp); letter-spacing:-1px; margin:6px 0 2px;}
+.logo b{color:var(--gold); display:block; font-size:54px; text-shadow:0 0 30px rgba(255,206,84,.35);}
+.tag{color:var(--dim); max-width:300px; font-size:14px; line-height:1.5;}
+.crewline{display:flex; gap:8px; margin:14px 0 4px; font-size:26px;}
+.crewline span{filter:drop-shadow(0 3px 6px rgba(0,0,0,.5)); animation:bob 2.4s ease-in-out infinite;}
+.crewline span:nth-child(2){animation-delay:.2s} .crewline span:nth-child(3){animation-delay:.4s}
+.crewline span:nth-child(4){animation-delay:.6s} .crewline span:nth-child(5){animation-delay:.8s}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.rules{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 16px;
+  text-align:left; font-size:13px; color:var(--dim); line-height:1.55; max-width:330px; margin-top:6px;}
+.rules b{color:var(--ink);} .rules .k{color:var(--gold); font-weight:700;}
+
+/* ============================= HUD ============================= */
+#hud{display:flex; flex-direction:column; gap:8px; flex:0 0 auto; padding-top:48px;} /* drop below the fixed header icons (👤/?/🔊) so the Bank readout isn't covered */
+.hudtop{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.jobname{font-weight:700; font-size:16px; letter-spacing:.2px; min-width:0; overflow:hidden;}
+.jobname small{display:block; font:700 10px var(--mono); letter-spacing:.2em; color:var(--faint); text-transform:uppercase; margin-bottom:2px;}
+.jobname>span{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bank{display:flex; flex-direction:column; align-items:flex-end; line-height:1.05; flex:0 0 auto;}
+.bank .blbl{font:700 9px var(--mono); letter-spacing:.16em; color:var(--faint); text-transform:uppercase;}
+.cash{font:800 16px var(--mono); color:var(--gold);}
+
+.vault{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+  border-radius:16px; padding:11px 14px 12px; box-shadow:var(--shadow);}
+.vrow{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
+.vrow .lbl{font:700 11px var(--mono); letter-spacing:.16em; color:var(--gold); text-transform:uppercase;}
+.target{font:700 13px var(--mono); color:var(--dim);} .target b{color:var(--ink);}
+.scorerow{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom:8px;}
+.scorewrap{display:flex; align-items:flex-start; line-height:1; min-width:0;}
+.scorewrap .cur{font:800 18px var(--mono); color:var(--gold); margin-top:4px; margin-right:1px;}
+.score{font:800 36px var(--mono); line-height:1; transition:color .2s;}
+.plays-stat{display:flex; flex-direction:column; align-items:center; flex:0 0 auto;
+  padding:4px 13px; border-radius:12px; background:#0c1024; border:1px solid var(--line);}
+.plays-stat .pv{font:800 24px var(--mono); line-height:1.05; color:var(--ink);}
+.plays-stat .pl{font:700 9px var(--mono); letter-spacing:.1em; color:var(--faint); text-transform:uppercase;}
+.plays-stat.low{border-color:var(--bad); background:rgba(255,93,115,.13);}
+.plays-stat.low .pv{color:var(--bad);}
+
+.bar{height:10px; border-radius:999px; background:#0c1024; overflow:hidden; border:1px solid var(--line);}
+.bar i{display:block; height:100%; width:0%; border-radius:999px;
+  background:linear-gradient(90deg,var(--good),#39c0ff); transition:width .5s cubic-bezier(.2,.8,.2,1);
+  box-shadow:0 0 12px rgba(75,227,166,.6);}
+.bar.done i{background:linear-gradient(90deg,var(--gold),var(--gold2)); box-shadow:0 0 16px rgba(255,206,84,.7);}
+.vstate{margin-top:7px; font:700 12px var(--mono); color:var(--dim); text-align:center; letter-spacing:.02em;}
+.vstate.done{color:var(--gold);}
+
+/* owned-gadget kit strip (mobile gameplay) — tap a chip for its effect */
+#mkit{display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+#mkit .gchip{display:inline-flex; align-items:center; gap:5px; min-height:30px; padding:0 9px 0 7px;
+  background:var(--panel2); border-radius:9px; border:1px solid var(--line); cursor:pointer;
+  font:800 10px var(--mono); color:var(--dim);}
+#mkit .gchip .gi{font-size:15px;}
+#mkit .gchip .gn{text-transform:uppercase; letter-spacing:.05em;}
+#mkit:empty{display:none;}
+
+.sidextra{display:none;} /* shown only on desktop (side console) */
+
+/* ============================= STAGE / FX ============================= */
+#stage{flex:1 1 auto; position:relative; display:flex; align-items:center; justify-content:center; min-height:0; margin:6px 0;}
+#vaultdeco{position:absolute; top:46%; left:50%; transform:translate(-50%,-50%); width:230px; height:230px;
+  border-radius:50%; pointer-events:none; z-index:0; display:grid; place-items:center; opacity:.5;
+  background:radial-gradient(circle, rgba(255,206,84,.04), transparent 62%),
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,.04) 0 1.6deg, transparent 1.6deg 30deg);
+  border:1.5px solid rgba(255,255,255,.04);
+  box-shadow:inset 0 0 0 17px rgba(255,255,255,.01), inset 0 0 0 18px rgba(255,255,255,.035), inset 0 0 44px rgba(0,0,0,.5);}
+#vaultdeco::before{content:""; width:78px; height:78px; border-radius:50%; border:2px solid rgba(255,255,255,.06);
+  background:radial-gradient(circle, rgba(255,206,84,.10), transparent 72%); box-shadow:0 0 0 9px rgba(255,255,255,.015);}
+#vaultdeco::after{content:"$"; position:absolute; font:800 30px var(--mono); color:rgba(255,206,84,.20);}
+#hint{position:absolute; text-align:center; color:var(--faint); font-size:13px; line-height:1.5; padding:0 24px; pointer-events:none; z-index:2;}
+#scorefx{position:relative; text-align:center; display:none; z-index:2;}
+#fxchips{font:800 44px var(--mono); color:#cfe6ff; text-shadow:0 0 24px rgba(80,180,255,.45); line-height:1;}
+#fxmult{font:800 30px var(--mono); margin-top:6px; opacity:0;}
+#fxtotal{font:800 56px var(--mono); color:var(--gold); margin-top:10px; opacity:0; text-shadow:0 0 30px rgba(255,206,84,.5);}
+#fxname{font:700 12px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--dim); margin-top:10px; opacity:0;}
+.float{position:absolute; font:800 22px var(--mono); pointer-events:none; animation:floatup 1s ease forwards; text-shadow:0 2px 8px rgba(0,0,0,.6);}
+@keyframes floatup{0%{opacity:0; transform:translateY(8px) scale(.7)}25%{opacity:1; transform:translateY(-6px) scale(1.15)}100%{opacity:0; transform:translateY(-46px) scale(1)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+.pop{animation:pop .3s ease;}
+@keyframes slam{0%{transform:scale(2.4); opacity:0}55%{transform:scale(.86)}100%{transform:scale(1); opacity:1}}
+.slam{animation:slam .42s cubic-bezier(.2,1.4,.3,1) forwards;}
+.shake{animation:shake .32s ease;}
+@keyframes shake{10%{transform:translate(-3px,1px)}30%{transform:translate(4px,-2px)}50%{transform:translate(-4px,2px)}70%{transform:translate(3px,-1px)}90%{transform:translate(-2px,1px)}}
+
+/* ============================= HAND / CONTROLS ============================= */
+#controls{flex:0 0 auto; display:flex; flex-direction:column; gap:9px;
+  padding-bottom:max(0px, env(safe-area-inset-bottom));}
+.hand{display:flex; gap:6px; justify-content:center; align-items:flex-end; min-height:104px; padding-top:22px; flex-wrap:wrap;}
+.card{
+  position:relative; width:60px; height:84px; border-radius:11px; cursor:pointer; flex:0 0 auto;
+  background:linear-gradient(180deg,#222a49,#161c33); border:1.5px solid var(--line);
+  box-shadow:0 6px 12px rgba(0,0,0,.4); transition:transform .12s cubic-bezier(.2,.9,.3,1.2), box-shadow .12s, opacity .12s, border-color .12s;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:visible;
+}
+.card .top{position:absolute; top:0; left:0; right:0; height:7px; border-radius:9px 9px 0 0;}
+.card .ico{font-size:28px; line-height:1; margin-top:3px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+.card .val{position:absolute; top:7px; left:7px; font:800 15px var(--mono); text-shadow:0 1px 2px rgba(0,0,0,.65);}
+.card .nm{position:absolute; bottom:5px; left:0; right:0; text-align:center; font:800 9px var(--mono);
+  letter-spacing:.03em; color:inherit; text-transform:uppercase; text-shadow:0 1px 2px rgba(0,0,0,.75);}
+.card .check{position:absolute; top:-9px; right:-7px; width:23px; height:23px; border-radius:50%;
+  background:var(--gold); color:#241a00; font:800 13px var(--mono); display:none; align-items:center; justify-content:center;
+  box-shadow:0 3px 8px rgba(0,0,0,.55); z-index:3; border:2px solid var(--bg);}
+.card.sel{transform:translateY(-20px) scale(1.05); border-color:var(--gold);}
+.card.sel .check{display:flex;}
+.card.sel::after{content:""; position:absolute; inset:-2px; border-radius:13px; border:2.5px solid currentColor;
+  box-shadow:0 0 20px currentColor, inset 0 0 10px rgba(255,255,255,.12); opacity:.95; pointer-events:none;}
+.card.maxed{opacity:.42; filter:saturate(.6);}
+
+.preview{min-height:42px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  text-align:center; padding:5px 8px; border-radius:12px; background:rgba(12,16,36,.55); border:1px solid var(--line);}
+.preview.empty{background:transparent; border-color:transparent; color:var(--faint); font:700 13px var(--mono);}
+.preview .nm{font:800 11px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--gold);}
+.preview .calc{font:800 17px var(--mono); color:var(--ink);}
+.preview .calc .x{color:var(--good);} .preview .calc .eq{color:var(--gold);}
+
+.meta{display:flex; justify-content:center; gap:18px; font:700 12px var(--mono); color:var(--faint);
+  letter-spacing:.05em; text-transform:uppercase;}
+.meta b{color:var(--ink);}
+
+.actions{display:flex; gap:9px;}
+#discardBtn{flex:0 0 38%;}
+#playBtn{flex:1 1 auto;}
+.btn.sm{font-size:14px; padding:14px 10px;}
+
+/* ============================= SHOP ============================= */
+#shop{gap:10px;}
+.shophead{display:flex; align-items:center; justify-content:space-between; padding-top:48px;} /* drop below the fixed header icons so the Gear Cache cash isn't covered */
+.shophead h2{margin:0; font-size:20px;} .shophead h2 small{display:block; color:var(--faint); font:700 10px var(--mono); letter-spacing:.2em;}
+.kitlbl{font:700 10px var(--mono); letter-spacing:.16em; color:var(--faint); text-transform:uppercase; margin:2px 2px -2px;}
+.kitlbl span{color:var(--dim); letter-spacing:.02em;}
+.owned{display:flex; gap:6px; flex-wrap:wrap; min-height:30px; padding:8px; background:var(--panel); border:1px dashed var(--line); border-radius:12px;}
+.owned .gchip{font-size:18px; width:34px; height:34px; display:grid; place-items:center; background:var(--panel2); border-radius:8px; border:1px solid var(--line); cursor:pointer;}
+.owned .empty{color:var(--faint); font-size:12px; align-self:center;}
+.offers{display:flex; flex-direction:column; gap:10px; overflow-y:auto; flex:1 1 auto; padding:2px;}
+.offer{display:flex; align-items:center; gap:12px; background:linear-gradient(180deg,var(--panel),var(--panel2));
+  border:1px solid var(--line); border-radius:14px; padding:12px; box-shadow:var(--shadow);}
+.offer .face{width:50px; height:62px; border-radius:10px; display:grid; place-items:center; font-size:26px; flex:0 0 auto; position:relative; background:#0f1430; border:1px solid var(--line);}
+.offer .face .top{position:absolute; top:0; left:0; right:0; height:5px; border-radius:10px 10px 0 0;}
+.offer .face .val{position:absolute; top:5px; left:6px; font:800 12px var(--mono);}
+.offer .info{flex:1 1 auto; min-width:0;}
+.offer .info .ti{font-weight:700; font-size:14px;}
+.offer .info .de{font-size:12px; color:var(--dim); line-height:1.4; margin-top:2px;}
+.offer .info .tag{font:700 9px var(--mono); letter-spacing:.15em; text-transform:uppercase; color:var(--faint);}
+.offer .buy{flex:0 0 auto;}
+.offer .buy button{font:800 13px var(--mono); border:none; border-radius:11px; padding:11px 13px; min-width:62px;
+  background:linear-gradient(180deg,var(--gold),var(--gold2)); color:#241a00; box-shadow:0 4px 0 #a9730a; cursor:pointer;}
+.offer .buy button:active{transform:translateY(3px); box-shadow:0 1px 0 #a9730a;}
+.offer .buy button[disabled]{filter:grayscale(.7) brightness(.6); box-shadow:none; transform:none; cursor:default;}
+.offer.sold{opacity:.45;}
+.shopfoot{display:flex; gap:10px;}
+.shopfoot .reroll{flex:0 0 auto; width:auto;}
+
+/* ============================= RESULT ============================= */
+#result{align-items:center; justify-content:flex-start; gap:12px; overflow-y:auto;}
+#cardimg{width:100%; max-width:340px; border-radius:18px; box-shadow:0 18px 50px rgba(0,0,0,.6); border:1px solid var(--line);}
+.sharebtns{display:flex; flex-direction:column; gap:9px; width:100%; max-width:340px;}
+.srow{display:flex; gap:9px;} .srow .btn{flex:1;}
+.locknote{font-size:13px; color:var(--dim); text-align:center; max-width:320px; line-height:1.5;}
+.countdown{font:800 18px var(--mono); color:var(--gold);}
+
+/* ============================= MISC ============================= */
+#mute{position:absolute; top:max(10px, env(safe-area-inset-top)); right:12px; z-index:30; width:44px; height:44px; border-radius:12px;
+  background:rgba(15,20,48,.7); border:1px solid var(--line); color:var(--dim); font-size:18px; cursor:pointer; backdrop-filter:blur(6px);}
+#toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); z-index:60;
+  background:#fff; color:#111; font:700 13px var(--disp); padding:11px 18px; border-radius:999px; opacity:0;
+  transition:all .3s ease; box-shadow:0 10px 30px rgba(0,0,0,.4); pointer-events:none;}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.confetti{position:absolute; z-index:50; width:9px; height:14px; border-radius:2px; pointer-events:none; will-change:transform,opacity;}
+@keyframes drop{to{transform:translateY(620px) rotate(540deg); opacity:0}}
+.flash{position:absolute; inset:0; pointer-events:none; opacity:0; z-index:20; border-radius:0;}
+.flash.go{animation:flash .5s ease;}
+@keyframes flash{0%{opacity:.5}100%{opacity:0}}
+.banner{position:absolute; left:0; right:0; top:38%; text-align:center; z-index:40; pointer-events:none;}
+.banner .big{font:800 46px var(--disp); letter-spacing:1px; text-shadow:0 4px 24px rgba(0,0,0,.6);}
+.banner .sub{font:700 14px var(--mono); color:var(--dim); margin-top:4px; letter-spacing:.1em;}
+/* ============================= DESKTOP (fills the page) ============================= */
+@media (min-width:860px) and (min-height:520px){
+  html,body{overflow:auto;}
+  #app{max-width:1600px; box-shadow:none;}
+  .screen{padding:26px 32px;}
+  #cardimg{max-width:380px;}
+
+  /* grander intro on a big screen */
+  #intro .logo{font-size:50px;}
+  #intro .logo b{font-size:72px;}
+  #intro .tag,#intro .rules{max-width:460px;}
+
+  /* GAME → landscape "vault console": left status rail + right play area */
+  #game.screen.active{
+    display:grid;
+    grid-template-columns:minmax(300px,360px) 1fr;
+    grid-template-rows:1fr auto;
+    grid-template-areas:"side stage" "side controls";
+    column-gap:30px; row-gap:14px; align-items:stretch;
+  }
+  #hud{grid-area:side; gap:12px; padding-top:0;} /* mobile icon-bar offset not needed in the sidebar layout */
+  #stage{grid-area:stage; margin:0;}
+  #controls{grid-area:controls; width:100%; max-width:780px; justify-self:center;}
+  .hudtop{padding-right:0;}
+  .shophead{padding-top:0;}
+  .score{font-size:42px;}
+  .scorewrap .cur{font-size:23px; margin-top:5px;}
+  .plays-stat .pv{font-size:28px;}
+  .vstate{font-size:13px;}
+  .preview .calc{font-size:19px;}
+  #mkit{display:none;} /* desktop shows the kit in the side rail */
+
+  /* side-rail extras (crew legend + owned gadget kit) */
+  .sidextra{display:flex; flex-direction:column; gap:12px; flex:1 1 auto; min-height:0;}
+  .legend{display:grid; grid-template-columns:1fr 1fr; gap:8px 14px;
+    background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+    border-radius:16px; padding:13px 15px; box-shadow:var(--shadow);}
+  .legend span{display:flex; align-items:center; gap:8px; font:700 12px var(--mono); color:var(--dim);}
+  .legend i{width:11px; height:11px; border-radius:3px; box-shadow:0 0 7px rgba(255,255,255,.12);}
+  .kitwrap{flex:1 1 auto; display:flex; flex-direction:column; min-height:120px;
+    background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+    border-radius:16px; padding:13px 15px; box-shadow:var(--shadow);}
+  .kittitle{font:700 10px var(--mono); letter-spacing:.2em; color:var(--faint); text-transform:uppercase; margin-bottom:10px;}
+  .gamekit{display:flex; flex-wrap:wrap; gap:7px; align-content:flex-start; overflow-y:auto;}
+  .gamekit .gchip{font-size:18px; width:32px; height:32px; display:grid; place-items:center;
+    background:var(--panel2); border-radius:8px; border:1px solid var(--line);}
+  .kitempty{color:var(--faint); font-size:12px; line-height:1.5;}
+
+  /* scale up the play-area drama */
+  #vaultdeco{width:300px; height:300px;}
+  .card{width:70px; height:98px;}
+  .card .ico{font-size:31px;}
+  .card .val{font-size:15px;}
+  .hand{min-height:120px; gap:9px; padding-top:22px;}
+  #fxchips{font-size:58px;} #fxmult{font-size:38px;} #fxtotal{font-size:82px;} #fxname{font-size:14px;}
+  .banner .big{font-size:60px;}
+
+  /* SHOP → centered two-column grid */
+  #shop.screen.active{max-width:1040px; margin:0 auto;}
+  .offers{display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; align-content:start;}
+}
+@media (max-height:680px){
+  .card{width:54px;height:76px;} .card .ico{font-size:24px}
+  #fxchips{font-size:38px} #fxtotal{font-size:46px} .logo b{font-size:46px}
+}
+
+/* ============================= HELP / TUTORIAL ============================= */
+#help{position:absolute; top:max(10px, env(safe-area-inset-top)); right:64px; z-index:30; width:44px; height:44px;
+  border-radius:12px; background:rgba(15,20,48,.7); border:1px solid var(--line); color:var(--dim);
+  font:800 19px var(--mono); cursor:pointer; backdrop-filter:blur(6px);}
+#profile{position:absolute; top:max(10px, env(safe-area-inset-top)); right:116px; z-index:30; width:44px; height:44px;
+  border-radius:12px; background:rgba(15,20,48,.7); border:1px solid var(--line); color:var(--dim);
+  font-size:18px; cursor:pointer; backdrop-filter:blur(6px);}
+#profile.named{border-color:var(--gold); color:var(--gold);}
+.howto-link{display:block; margin:10px auto 0; background:transparent; border:none; color:var(--dim);
+  font:700 13px var(--mono); letter-spacing:.04em; text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:6px;}
+
+/* shared overlay shell */
+.tut-scrim{position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center;
+  padding:18px; background:rgba(5,7,14,.76); backdrop-filter:blur(4px);}
+.tut-scrim.show{display:flex; animation:fadein .25s ease;}
+
+/* How-to + first-time modal cards */
+.modal-card{width:100%; max-width:420px; max-height:92vh; overflow-y:auto;
+  background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+  border-radius:20px; box-shadow:0 24px 60px rgba(0,0,0,.6); padding:20px;}
+.modal-card h2{margin:0 0 4px; font:800 23px var(--disp); letter-spacing:.5px;}
+.modal-card h2 .kk{color:var(--gold);}
+.ft-copy{font-size:13.5px; line-height:1.55; color:var(--dim); margin:6px 0 0;} .ft-copy b{color:var(--ink);}
+.howto-sec{margin:12px 0;}
+.howto-sec .h{font:700 11px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--gold);}
+.howto-sec .b{font-size:13.5px; line-height:1.5; color:var(--dim); margin-top:3px;}
+.howto-sec .b b{color:var(--ink);}
+.flowdiag{display:flex; flex-wrap:wrap; align-items:center; gap:6px; justify-content:center; margin:14px 0 2px;
+  padding:12px; background:#0c1024; border:1px solid var(--line); border-radius:14px;}
+.flowdiag .fchip{font:800 10px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--ink);
+  background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:7px 9px;}
+.flowdiag .farr{color:var(--gold); font:800 13px var(--mono);}
+.modal-actions{display:flex; flex-direction:column; gap:9px; margin-top:16px;}
+.modal-opt{display:flex; align-items:center; gap:8px; font:700 12px var(--mono); color:var(--faint); margin-top:12px; cursor:pointer;}
+.modal-opt input{width:16px; height:16px; accent-color:var(--gold);}
+
+/* guided tutorial play panel (its own practice cards — official run untouched) */
+#tutGuide{padding:14px;}
+.gpanel{width:100%; max-width:440px; max-height:94vh; overflow-y:auto; display:flex; flex-direction:column; gap:10px;
+  background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+  border-radius:20px; box-shadow:0 24px 60px rgba(0,0,0,.6); padding:16px;}
+.tut-banner{display:flex; align-items:center; justify-content:center; gap:7px; text-align:center;
+  font:800 10px var(--mono); letter-spacing:.06em; text-transform:uppercase; color:#241a00;
+  background:linear-gradient(180deg,var(--gold),var(--gold2)); border-radius:10px; padding:7px 10px;}
+.tut-hud{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 12px;
+  background:#0c1024; border:1px solid var(--line); border-radius:12px; font:700 12px var(--mono); color:var(--dim);}
+.tut-hud b{color:var(--ink);} .tut-hud .tgt b{color:var(--gold);}
+.tut-hand{display:flex; gap:6px; justify-content:center; align-items:flex-end; flex-wrap:wrap; min-height:104px; padding-top:22px;}
+.tut-actions .btn{width:100%;}
+.tut-coach{background:#0c1024; border:1px solid var(--line); border-radius:14px; padding:13px 14px;}
+.tut-coach .ct{font:800 12px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--gold);}
+.tut-coach .cb{font-size:13.5px; line-height:1.5; color:var(--ink); margin-top:5px;} .tut-coach .cb b{color:var(--gold);}
+.tut-fb{color:var(--good)!important; font:700 12px var(--mono)!important;} .tut-fb:empty{display:none;}
+.crow{display:flex; gap:9px; align-items:center; margin-top:12px;}
+.crow .btn{flex:1 1 auto;}
+.crow .tut-skip{flex:0 0 auto;}
+.crow.col{flex-direction:column; align-items:stretch;}
+.crow.col .btn{flex:0 0 auto; width:100%;}
+.tut-skip{background:transparent; border:none; color:var(--faint); font:700 12px var(--mono);
+  text-decoration:underline; text-underline-offset:2px; cursor:pointer; padding:9px 8px;}
+.tut-dots{display:flex; gap:5px; justify-content:center; margin-top:12px;}
+.tut-dots i{width:7px; height:7px; border-radius:50%; background:var(--line);}
+.tut-dots i.on{background:var(--gold); box-shadow:0 0 8px rgba(255,206,84,.6);}
+
+/* spotlight: non-color-only (dashed outline + pulse + labelled tag) */
+.tut-spot{outline:2.5px dashed var(--gold); outline-offset:6px; border-radius:14px; animation:tutpulse 1.4s ease-in-out infinite;}
+@keyframes tutpulse{0%,100%{outline-color:rgba(255,206,84,.5)} 50%{outline-color:rgba(255,206,84,1)}}
+.tut-tag{position:absolute; top:-11px; left:50%; transform:translateX(-50%); z-index:6; pointer-events:none;
+  font:800 9px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:#241a00;
+  background:var(--gold); border-radius:999px; padding:3px 9px; box-shadow:0 3px 8px rgba(0,0,0,.5); white-space:nowrap;}
+#tutHud, #tutPreview, #tutHand, #tutPlay{position:relative;}
+
+.tut-scrim :focus-visible, .tut-hand .card:focus-visible, #help:focus-visible, .howto-link:focus-visible{
+  outline:3px solid var(--gold); outline-offset:3px;}
+
+@media (prefers-reduced-motion:reduce){
+  .tut-spot{animation:none; outline-color:var(--gold);}
+  .tut-scrim.show{animation:none;}
+  .tut-hand .card{transition:none;}
+  .tut-hand .card.sel{transform:none; outline:3px solid var(--gold); outline-offset:3px;}
+}
+
+/* ============================= LEADERBOARD ============================= */
+.lb-note{font:700 11px var(--mono); line-height:1.5; color:var(--faint); background:#0c1024;
+  border:1px solid var(--line); border-radius:10px; padding:9px 11px; margin:4px 0 12px;}
+.lb-me{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+.lb-me .lb-melbl{font:700 10px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--faint);}
+.lb-me .lb-name{font:800 15px var(--disp); color:var(--gold);}
+.lb-edit{margin-left:auto; background:transparent; border:1px solid var(--line); color:var(--dim);
+  border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:14px;}
+.lb-head,.lb-row{display:grid; grid-template-columns:32px 1fr auto auto; gap:10px; align-items:center; padding:9px 11px;}
+.lb-head{font:700 9px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--faint); padding-bottom:2px;}
+.lb-row{background:#0c1024; border:1px solid var(--line); border-radius:10px; margin-bottom:7px;
+  font:700 13px var(--mono); color:var(--dim);}
+.lb-row .lb-rank{font:800 14px var(--mono); color:var(--faint); text-align:center;}
+.lb-row .lb-day{color:var(--ink);} .lb-row .lb-day em{color:var(--faint); font-style:normal; font-size:11px;}
+.lb-row .lb-score{color:var(--gold);}
+.lb-row .lb-res{font:800 11px var(--mono);} .lb-row .lb-res.ok{color:var(--good);} .lb-row .lb-res.bust{color:var(--bad);}
+.lb-row.me{border-color:var(--gold); background:rgba(255,206,84,.08);}
+.lb-row.me .lb-rank{color:var(--gold);}
+.lb-empty{text-align:center; color:var(--faint); font:700 13px var(--mono); line-height:1.6; padding:24px 8px;}
+.lb-sub{margin-top:10px; font:700 12px var(--mono); color:var(--dim); text-align:center;}
+.lb-sub.dim{color:var(--faint);} .lb-sub b{color:var(--gold);}
+.lb-cta{margin-left:auto; background:transparent; border:1px solid var(--gold); color:var(--gold);
+  border-radius:8px; padding:6px 10px; font:800 10px var(--mono); letter-spacing:.04em; cursor:pointer;}
+
+/* ============================= PROFILE ============================= */
+.pf-card{background:#0c1024; border:1px solid var(--line); border-radius:14px; padding:14px; margin:4px 0 14px;}
+.pf-status{display:flex; align-items:center; gap:10px;}
+.pf-badge{font:800 10px var(--mono); letter-spacing:.12em; text-transform:uppercase; padding:5px 10px; border-radius:999px;
+  background:rgba(255,255,255,.06); border:1px solid var(--line); color:var(--dim);}
+.pf-badge.on{background:rgba(255,206,84,.12); border-color:var(--gold); color:var(--gold);}
+.pf-name{font:800 20px var(--disp); color:var(--gold); line-height:1.1; margin-top:10px;}
+.pf-email{font:700 11px var(--mono); color:var(--dim); margin-top:3px;}
+.pf-sub{font:700 11px var(--mono); line-height:1.5; color:var(--faint); margin-top:8px;}
+.pf-actions{display:flex; gap:9px; flex-wrap:wrap; margin-top:13px;}
+.pf-actions .btn{flex:1 1 auto; padding:13px 12px; font-size:14px;}
+.pf-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:0 0 14px;}
+.pf-stat{background:#0c1024; border:1px solid var(--line); border-radius:12px; padding:12px 13px;}
+.pf-stat .v{font:800 22px var(--disp); color:var(--ink); line-height:1;}
+.pf-stat .v.gold{color:var(--gold);}
+.pf-stat .l{font:700 9.5px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-top:6px;}
+.pf-stat.dim .v{color:var(--faint); font-size:18px;}
+.pf-h{font:700 11px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin:2px 0 8px;}
+.pf-hist{display:flex; flex-direction:column; gap:7px;}
+.pf-hrow{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center;
+  background:#0c1024; border:1px solid var(--line); border-radius:10px; padding:9px 11px; font:700 13px var(--mono);}
+.pf-hrow.me{border-color:var(--gold); background:rgba(255,206,84,.08);}
+.pf-hrow .d{color:var(--ink);} .pf-hrow .d em{color:var(--faint); font-style:normal; font-size:11px; margin-left:6px;}
+.pf-hrow .s{color:var(--gold);}
+.pf-hrow .r{font:800 11px var(--mono); text-align:right;} .pf-hrow .r.ok{color:var(--good);} .pf-hrow .r.bust{color:var(--bad);}
+.pf-empty{text-align:center; color:var(--faint); font:700 13px var(--mono); line-height:1.6; padding:18px 8px;}
+.pf-note{font:700 11px var(--mono); line-height:1.5; color:var(--faint); background:#0c1024;
+  border:1px solid var(--line); border-radius:10px; padding:9px 11px; margin-top:14px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <button id="mute" title="Sound on/off">🔊</button>
+  <button id="help" title="How to play" aria-label="How to play">?</button>
+  <button id="profile" title="Profile" aria-label="Profile">👤</button>
+
+  <!-- INTRO -->
+  <section id="intro" class="screen active">
+    <div class="kicker">One Vault · Same Odds</div>
+    <div class="logo"><b>VAULTURE</b></div>
+    <div class="crewline"><span>💻</span><span>🧠</span><span>🧨</span><span>🎭</span><span>🚗</span></div>
+    <div class="pill" id="introday">DAY 1 · —</div>
+    <div class="rules">
+      <b>Assemble your crew. Crack the vault.</b><br>
+      • Play <span class="k">matching crew</span> together — the bigger the matched set, the bigger the <span class="k">multiplier</span> (×2 → ×4 → ×8 → ×15).<br>
+      • Crack each <span class="k">lock</span>'s target before you run out of <span class="k">plays</span>.<br>
+      • Spend loot in the <span class="k">Gear Cache</span> on gadgets that stack &amp; synergize.<br>
+      • <b>One run per day</b> — same vault for everyone, worldwide.
+    </div>
+    <div style="height:6px"></div>
+    <button class="btn" id="startBtn" style="max-width:330px">START TODAY'S RUN →</button>
+    <div class="tag" style="margin-top:10px">5–10 minutes · no login · share your run</div>
+    <button class="howto-link" id="introHowto" type="button">How to play</button>
+    <button class="howto-link" id="introLb" type="button">🏆 Leaderboard</button>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="screen">
+    <div id="hud">
+      <div class="hudtop">
+        <div class="jobname"><small id="jobtag">Day 1 · Lock 1/5</small><span id="jobname">The Corner Store</span></div>
+        <div class="bank"><span class="blbl">Bank</span><span class="cash">💰 <span id="cash" class="num">0</span></span></div>
+      </div>
+      <div class="vault">
+        <div class="vrow">
+          <span class="lbl">Current Haul</span>
+          <span class="target" id="targetline">Target <b id="target" class="num">$50</b></span>
+        </div>
+        <div class="scorerow">
+          <div class="scorewrap"><span class="cur">$</span><span id="score" class="score num">0</span></div>
+          <div class="plays-stat" id="playsStat"><span class="pv num" id="plays">4</span><span class="pl">plays left</span></div>
+        </div>
+        <div class="bar" id="bar"><i id="barfill"></i></div>
+        <div class="vstate" id="vstate">Need $50 more</div>
+      </div>
+      <div id="mkit"></div>
+      <div class="sidextra">
+        <div class="legend">
+          <span><i style="background:var(--c-Spark)"></i>Spark</span>
+          <span><i style="background:var(--c-Rook)"></i>Rook</span>
+          <span><i style="background:var(--c-Ram)"></i>Ram</span>
+          <span><i style="background:var(--c-Veil)"></i>Veil</span>
+          <span><i style="background:var(--c-Dash)"></i>Dash</span>
+        </div>
+        <div class="kitwrap">
+          <div class="kittitle">Your Kit</div>
+          <div id="gamekit" class="gamekit"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="stage">
+      <div class="flash" id="flash"></div>
+      <div id="vaultdeco"></div>
+      <div id="hint">Tap crew to add them to the lock.<br>Matching crew chain into bigger multipliers.</div>
+      <div id="scorefx">
+        <div id="fxchips" class="num">0</div>
+        <div id="fxmult" class="num"></div>
+        <div id="fxtotal" class="num"></div>
+        <div id="fxname"></div>
+      </div>
+    </div>
+
+    <div id="controls">
+      <div class="hand" id="hand"></div>
+      <div class="meta">
+        <span><b id="selcount" class="num">0</b>/5 crew</span>
+        <span>Burns <b id="discards" class="num">3</b></span>
+      </div>
+      <div class="preview empty" id="preview">Select crew to plan your play</div>
+      <div class="actions">
+        <button class="btn ghost sm" id="discardBtn">🔥 Burn</button>
+        <button class="btn" id="playBtn">SELECT CREW</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP -->
+  <section id="shop" class="screen">
+    <div class="shophead">
+      <h2><small>The Fence · Between Locks</small>Gear Cache</h2>
+      <div class="cash">💰 <span id="shopcash" class="num">0</span></div>
+    </div>
+    <div class="kitlbl">Your Kit <span>· tap a gadget for details</span></div>
+    <div class="owned" id="owned"></div>
+    <div class="offers" id="offers"></div>
+    <div class="shopfoot">
+      <button class="btn ghost reroll" id="rerollBtn">🔄 Reroll · <span id="rerollcost">2</span></button>
+      <button class="btn" id="nextBtn">NEXT LOCK →</button>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="screen">
+    <img id="cardimg" alt="Your Vaulture run result card" />
+    <div class="sharebtns">
+      <button class="btn row" id="shareBtn">📤 Share my run</button>
+      <div class="srow">
+        <button class="btn ghost" id="copyBtn">📋 Copy</button>
+        <button class="btn ghost" id="saveBtn">💾 Save</button>
+      </div>
+      <button class="btn ghost row" id="lbBtn">🏆 Daily Rankings</button>
+    </div>
+    <div class="locknote">
+      🔒 Today's run is done. The next vault unlocks in<br>
+      <span class="countdown" id="countdown">—</span>
+    </div>
+  </section>
+</div>
+
+<!-- ============ TUTORIAL / HOW-TO (practice-only; never touches the official run) ============ -->
+<div class="tut-scrim" id="tutFirstScrim" role="dialog" aria-modal="true" aria-labelledby="ftTitle" aria-hidden="true">
+  <div class="modal-card" style="max-width:360px;text-align:center">
+    <h2 id="ftTitle">Learn the <span class="kk">Basics?</span></h2>
+    <p class="ft-copy">Vaulture gives you <b>one official run each day</b>. Try a quick practice tutorial first so your first real run counts.</p>
+    <div class="modal-actions">
+      <button class="btn" id="ftStart" type="button">Start Tutorial</button>
+      <button class="btn ghost" id="ftSkip" type="button">Skip for Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="tut-scrim" id="howtoScrim" role="dialog" aria-modal="true" aria-labelledby="htTitle" aria-hidden="true">
+  <div class="modal-card">
+    <h2 id="htTitle">How to <span class="kk">Play</span></h2>
+    <div class="howto-sec"><div class="h">The Daily Run</div><div class="b">Everyone cracks the <b>same vault</b> each day. You get <b>one official scored run</b>.</div></div>
+    <div class="howto-sec"><div class="h">Build a Play</div><div class="b">Tap crew cards to add them to your play — up to <b>5 at once</b>. Matching crew make bigger multipliers (×2 → ×4 → ×8 → ×15).</div></div>
+    <div class="howto-sec"><div class="h">Check the Preview</div><div class="b">Your combo, loot, and multiplier update <b>before you commit</b>.</div></div>
+    <div class="howto-sec"><div class="h">Commit Carefully</div><div class="b">Press <b>Play</b> and the hand counts for the run. Crack each lock's target before your plays run out.</div></div>
+    <div class="howto-sec"><div class="h">Share Your Result</div><div class="b">When the run ends, share a <b>spoiler-free</b> result card and compare scores.</div></div>
+    <div class="flowdiag">
+      <span class="fchip">Hand</span><span class="farr">→</span>
+      <span class="fchip">Select Crew</span><span class="farr">→</span>
+      <span class="fchip">Preview</span><span class="farr">→</span>
+      <span class="fchip">Play</span><span class="farr">→</span>
+      <span class="fchip">Result</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="htStart" type="button">▶ Start Guided Tutorial</button>
+      <button class="btn ghost" id="htClose" type="button">Close</button>
+    </div>
+    <label class="modal-opt"><input type="checkbox" id="htNoTips"> Don't auto-show tips for new runs</label>
+  </div>
+</div>
+
+<div class="tut-scrim" id="tutGuide" role="dialog" aria-modal="true" aria-labelledby="tutCoachTitle" aria-hidden="true">
+  <div class="gpanel">
+    <div class="tut-banner">● Training Run — doesn't affect today's score</div>
+    <div class="tut-hud" id="tutHud">
+      <span>Day <b id="tutDay">1</b> · Lock 1/5</span>
+      <span class="tgt">Target <b>$50</b></span>
+    </div>
+    <div class="preview empty" id="tutPreview">Tap crew to plan your play</div>
+    <div class="tut-hand" id="tutHand"></div>
+    <div class="tut-actions"><button class="btn" id="tutPlay" type="button" disabled>SELECT CREW</button></div>
+    <div class="tut-coach" aria-live="polite">
+      <div class="ct" id="tutCoachTitle">Step</div>
+      <div class="cb" id="tutCoachBody">…</div>
+      <div class="cb tut-fb" id="tutFeedback"></div>
+      <div class="crow" id="tutBtns"></div>
+      <div class="tut-dots" id="tutDots"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tut-scrim" id="lbScrim" role="dialog" aria-modal="true" aria-labelledby="lbTitle" aria-hidden="true">
+  <div class="modal-card">
+    <h2 id="lbTitle">🏆 <span class="kk">Leaderboard</span></h2>
+    <div id="lbBody"></div>
+    <div class="modal-actions"><button class="btn" id="lbClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<!-- Optional profile / account page. Accounts are NOT required to play — guests
+     keep their full daily run + share card. profileService owns identity (the
+     name shown on the leaderboard); see the JS section for the backend seam. -->
+<div class="tut-scrim" id="profileScrim" role="dialog" aria-modal="true" aria-labelledby="pfTitle" aria-hidden="true">
+  <div class="modal-card">
+    <h2 id="pfTitle">👤 <span class="kk">Profile</span></h2>
+    <div id="pfBody"></div>
+    <div class="modal-actions"><button class="btn" id="pfClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<!-- Gentle post-run nudge for guests only. Optional, dismissible, never blocks. -->
+<div class="tut-scrim" id="nudgeScrim" role="dialog" aria-modal="true" aria-labelledby="nudgeTitle" aria-hidden="true">
+  <div class="modal-card" style="max-width:360px;text-align:center">
+    <h2 id="nudgeTitle">Nice <span class="kk">run.</span></h2>
+    <p class="ft-copy">Create a profile to <b>save your stats</b> and <b>appear on the leaderboard</b>. Your score is already saved on this device — this just puts your name on it.</p>
+    <div class="modal-actions">
+      <button class="btn" id="nudgeCreate" type="button">Create Profile</button>
+      <button class="btn ghost" id="nudgeLater" type="button">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<canvas id="sharecanvas" width="1080" height="1350" style="display:none"></canvas>
+
+<script>
+"use strict";
+/* ============================================================= *
+ *  VAULTURE — single-file prototype
+ *  Sections: RNG · Day · Data · State · Scoring · Render · FX
+ *            · Gear Cache · Result/Share · Boot
+ *  Note: crew object keys (Hacker/Mastermind/Demolition/Face/Driver)
+ *  are STABLE INTERNAL IDS used by scoring, gadgets & saves.
+ *  The visible codename lives in SYMBOLS[id].label (Spark/Rook/Ram/Veil/Dash).
+ * ============================================================= */
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ---------------- Seeded RNG (deterministic) ---------------- */
+function xmur3(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}return function(){h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);h^=h>>>16;return h>>>0;};}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function makeRng(seedStr){return mulberry32(xmur3(seedStr)());}
+function streamRng(label){return makeRng(DAY.seedStr+"|"+label);} // independent, play-agnostic streams
+function shuffle(arr,rng){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pick(arr,rng){return arr[Math.floor(rng()*arr.length)];}
+
+/* ---------------- Day info ---------------- */
+function getDayInfo(){
+  const now=new Date();
+  const utc=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
+  const dateStr=utc.toISOString().slice(0,10);
+  const EPOCH=Date.UTC(2026,5,15); // launch day = Day 1
+  const dayNumber=Math.max(1,Math.floor((utc.getTime()-EPOCH)/86400000)+1);
+  return {dateStr,dayNumber,seedStr:"VAULTURE-v1-"+dateStr,utcMs:utc.getTime()};
+}
+const DAY=getDayInfo();
+const GAME_NAME="VAULTURE";
+const GAME_URL=(location.protocol.startsWith("http")? (location.origin+location.pathname).replace(/index\.html$/,"") : "vaulture.fun").replace(/\/$/,"");
+const URL_DISPLAY=GAME_URL.replace(/^https?:\/\//,"");
+
+/* ---------------- Game data ---------------- */
+// keys = stable internal ids (used by scoring/gadgets/saves); label = visible codename
+const SYMBOLS={
+  Hacker:{icon:"💻",color:"#34e0e0",label:"Spark"}, Mastermind:{icon:"🧠",color:"#b06bff",label:"Rook"},
+  Demolition:{icon:"🧨",color:"#ff8a3d",label:"Ram"}, Face:{icon:"🎭",color:"#ff5fa2",label:"Veil"}, Driver:{icon:"🚗",color:"#7ee04a",label:"Dash"},
+};
+const SYMS=Object.keys(SYMBOLS);
+const symLabel=s=>(SYMBOLS[s]&&SYMBOLS[s].label)||s; // visible name for a crew id
+
+const JOBS=[
+  {name:"The Corner Store", target:50},
+  {name:"Jewelry Boutique", target:120},
+  {name:"The Art Gallery",  target:250},
+  {name:"First City Bank",  target:520},
+  {name:"The Grand Vault",  target:1050},
+];
+
+// Gadget effect fields handled by scorer/meta:
+//  chipsPerSymbol{sym,amt} flatChips flatMult multIfMatchN{n,amt}
+//  multPerUnused xMult xMultIfAllMatch multRainbow wildSymbol
+//  extraPlays extraDiscards extraHand extraCash
+// names/descs are display-only; ids and e:{} effects are load-bearing and unchanged
+const GADGETS=[
+  {id:"inside_Hacker",   name:"Inside Man",     icon:"💻", tag:"Crew",   price:5, desc:"+6 loot for each Spark played",       e:{chipsPerSymbol:{sym:"Hacker",amt:6}}},
+  {id:"inside_Demolition",name:"Powder Monkey", icon:"🧨", tag:"Crew",   price:5, desc:"+6 loot for each Ram played",         e:{chipsPerSymbol:{sym:"Demolition",amt:6}}},
+  {id:"inside_Face",     name:"Smooth Talker",  icon:"🎭", tag:"Crew",   price:5, desc:"+6 loot for each Veil played",        e:{chipsPerSymbol:{sym:"Face",amt:6}}},
+  {id:"inside_Driver",   name:"Wheelman",       icon:"🚗", tag:"Crew",   price:5, desc:"+6 loot for each Dash played",        e:{chipsPerSymbol:{sym:"Driver",amt:6}}},
+  {id:"loyalty",         name:"Crew Loyalty",   icon:"🤝", tag:"Combo",  price:6, desc:"+4 mult when you play 3+ matching",   e:{multIfMatchN:{n:3,amt:4}}},
+  {id:"all_in",          name:"All In",         icon:"🎯", tag:"Combo",  price:7, desc:"×2 loot if every played crew matches", e:{xMultIfAllMatch:2}},
+  {id:"veteran",         name:"Old Pro",        icon:"🎖️", tag:"Mult",  price:6, desc:"+3 mult on every play",               e:{flatMult:3}},
+  {id:"adrenaline",      name:"Adrenaline",     icon:"⚡", tag:"Tempo",  price:5, desc:"+2 mult per unused play remaining",   e:{multPerUnused:2}},
+  {id:"mastermind_wild", name:"The Rook",       icon:"🧠", tag:"Wild",   price:7, desc:"Rooks count as any crew (wild)",      e:{wildSymbol:"Mastermind"}},
+  {id:"forger",          name:"The Forger",     icon:"🌈", tag:"Combo",  price:6, desc:"+15 mult if all 5 crews are played",  e:{multRainbow:15}},
+  {id:"double_down",     name:"Double Down",    icon:"🎲", tag:"Mult",   price:8, desc:"×1.5 loot on every play",            e:{xMult:1.5}},
+  {id:"getaway",         name:"Floor It",       icon:"🏁", tag:"Setup",  price:6, desc:"+1 play every lock",                 e:{extraPlays:1}},
+  {id:"lucky",           name:"Lucky Charm",    icon:"🍀", tag:"Setup",  price:4, desc:"+1 burn & +12 loot per play",     e:{extraDiscards:1,flatChips:12}},
+  {id:"big_bag",         name:"Big Duffel",     icon:"🎒", tag:"Setup",  price:5, desc:"+1 card in hand",                    e:{extraHand:1}},
+  {id:"fence",           name:"The Fence",      icon:"💵", tag:"Cash",   price:5, desc:"+4 cash after every lock",           e:{extraCash:4}},
+];
+const GADGET_BY_ID=Object.fromEntries(GADGETS.map(g=>[g.id,g]));
+
+function startingDeck(){ // 3 of each crew @ values 2/3/5 → balanced base
+  const deck=[]; let uid=0;
+  for(const s of SYMS) for(const v of [2,3,5]) deck.push({uid:uid++,sym:s,val:v});
+  return {deck,nextUid:uid};
+}
+function groupMult(n){return [0,1,2,4,8,15][n]||15;}
+
+const RANKS=[ // by final score
+  {min:0,t:"Lookout"},{min:600,t:"Pickpocket"},{min:1800,t:"Cat Burglar"},
+  {min:4500,t:"Safecracker"},{min:9000,t:"Master Thief"},{min:18000,t:"Ghost"},{min:36000,t:"Legend"},
+];
+function rankFor(s){let r=RANKS[0];for(const x of RANKS) if(s>=x.min) r=x; return r.t;}
+
+/* ---------------- State / persistence ---------------- */
+const SAVE_KEY="vaulture_v1_state";
+const MUTE_KEY="vaulture_v1_mute";
+const OLD_KEYS=["dh_save_v1","dh_mute"]; // obsolete pre-rebrand prototype keys, cleared on boot
+let S=null; // game state
+
+function freshState(){
+  const {deck,nextUid}=startingDeck();
+  return {
+    day:DAY.dayNumber, dayStr:DAY.dateStr, phase:"intro",
+    jobIndex:0, deck, nextUid,
+    gadgets:[], cash:4,
+    drawPile:[], hand:[], discardPile:[], selected:[],
+    plays:0, discardsLeft:0, jobScore:0,
+    totalScore:0, jobResults:[],
+    signature:null, // {name,total,size,sym,rainbow}
+    biggestMult:0,
+    shop:{reroll:0, bought:[]},
+    completed:false, outcome:null, // "cleared" | "busted"
+    bustedOn:null,
+  };
+}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
+function load(){try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
+
+/* ---------------- Meta helpers (gadget aggregates) ---------------- */
+function ownedDefs(){return S.gadgets.map(id=>GADGET_BY_ID[id]).filter(Boolean);}
+function sumE(field){return ownedDefs().reduce((a,g)=>a+(g.e[field]||0),0);}
+function wildSet(){const w=new Set();for(const g of ownedDefs()) if(g.e.wildSymbol) w.add(g.e.wildSymbol);return w;}
+function handSize(){return 8+sumE("extraHand");}
+function playsPerJob(){return 4+sumE("extraPlays");}
+function discardsPerJob(){return 3+sumE("extraDiscards");}
+
+/* ---------------- Scoring ---------------- */
+function scorePlay(cards){
+  const defs=ownedDefs(), wilds=wildSet();
+  const counts={}; for(const c of cards) counts[c.sym]=(counts[c.sym]||0)+1;
+  let wildCount=0; for(const w of wilds) wildCount+=counts[w]||0;
+  // largest matched group (wilds join any non-wild group)
+  let bestSym=null,bestSize=0;
+  for(const s of SYMS){ if(wilds.has(s)) continue;
+    const size=(counts[s]||0)+wildCount;
+    if(size>bestSize){bestSize=size;bestSym=s;}
+  }
+  if(bestSym===null){ // all played are wild
+    for(const w of wilds){ if((counts[w]||0)>bestSize){bestSize=counts[w];bestSym=w;} }
+  }
+  const distinct=Object.keys(counts).length;
+  const rainbow=distinct===5;
+  const allMatch=cards.length>=2 && bestSize===cards.length;
+
+  // chips (per-card steps for animation)
+  const steps=[];
+  let chips=0;
+  for(const c of cards){
+    let add=c.val;
+    for(const g of defs) if(g.e.chipsPerSymbol && g.e.chipsPerSymbol.sym===c.sym) add+=g.e.chipsPerSymbol.amt;
+    chips+=add; steps.push({sym:c.sym,amt:add});
+  }
+  const flat=sumE("flatChips"); if(flat){chips+=flat; steps.push({sym:null,amt:flat,label:"Gadgets"});}
+
+  // additive mult
+  let mult=groupMult(Math.min(bestSize,5));
+  mult+=sumE("flatMult");
+  for(const g of defs) if(g.e.multIfMatchN && bestSize>=g.e.multIfMatchN.n) mult+=g.e.multIfMatchN.amt;
+  const unused=Math.max(0,S.plays-1); // plays remaining after this one
+  mult+=sumE("multPerUnused")*unused;
+  if(rainbow) mult+=sumE("multRainbow");
+
+  // multiplicative
+  let xm=1;
+  for(const g of defs){ if(g.e.xMult) xm*=g.e.xMult; if(allMatch && g.e.xMultIfAllMatch) xm*=g.e.xMultIfAllMatch; }
+
+  const effMult=mult*xm;
+  const total=Math.round(chips*effMult);
+
+  let name,col;
+  if(rainbow){name="The Diversion";col="linear-gradient(90deg,#ff5fa2,#ffce54,#34e0e0,#7ee04a)";}
+  else{
+    const label={1:"Solo Lock",2:"Double",3:"Crew",4:"Syndicate",5:"Perfect Sync"}[Math.min(bestSize,5)];
+    name=(bestSize>=2? (symLabel(bestSym)+" "):"")+label;
+    col=bestSym?SYMBOLS[bestSym].color:"var(--dim)";
+  }
+  return {cards,steps,chips,mult,xm,effMult,total,name,col,bestSize,bestSym,rainbow,allMatch};
+}
+
+/* ============================================================= *
+ *  RENDERING
+ * ============================================================= */
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");$("mute").style.display=(id==="result")?"none":"block";const hp=$("help");if(hp)hp.style.display=(id==="result")?"none":"block";const pf=$("profile");if(pf)pf.style.display=(id==="result")?"none":"block";syncProfileIcon();}
+// Reflect profile state on the header icon (gold when the player has a name).
+function syncProfileIcon(){ const b=$("profile"); if(!b) return; const named=profileService.hasProfile(); b.classList.toggle("named",named); b.title=named?("Profile · "+profileService.getName()):"Profile"; b.setAttribute("aria-label",b.title); }
+
+function renderHUD(){
+  const job=JOBS[S.jobIndex];
+  $("jobtag").textContent=`Day ${DAY.dayNumber} · Lock ${S.jobIndex+1}/${JOBS.length}`;
+  $("jobname").textContent=job.name;
+  $("cash").textContent=S.cash;
+  const secured=S.jobScore>=job.target;
+  $("targetline").innerHTML=secured?'<span style="color:var(--gold)">✓ Cracked</span>':('Target <b class="num">$'+fmt(job.target)+'</b>');
+  $("score").textContent=fmt(S.jobScore);
+  $("plays").textContent=S.plays;
+  $("discards").textContent=S.discardsLeft;
+  const pct=clamp(S.jobScore/job.target*100,0,100);
+  $("barfill").style.width=pct+"%";
+  $("bar").classList.toggle("done",secured);
+  $("score").style.color=secured?"var(--gold)":"var(--ink)";
+  // plays warning: low on plays and target not yet met (color + the persistent "plays left" label)
+  const ps=$("playsStat"); if(ps) ps.classList.toggle("low",!secured&&S.plays<=1);
+  // one-line objective state under the bar
+  const vs=$("vstate");
+  if(vs){
+    if(secured){ vs.textContent="Lock cracked — keep scoring"; vs.classList.add("done"); }
+    else{ vs.textContent="Need $"+fmt(job.target-S.jobScore)+" more"; vs.classList.remove("done"); }
+  }
+  // owned-gadget kit — tap a chip for its effect (mobile strip + desktop side rail)
+  const mk=$("mkit");
+  if(mk) mk.innerHTML=S.gadgets.map(id=>{const g=GADGET_BY_ID[id];
+    return `<div class="gchip" title="${g.name}: ${g.desc}" onclick="gadgetInfo('${id}')"><span class="gi">${g.icon}</span><span class="gn">${g.name}</span></div>`;}).join("");
+  const gk=$("gamekit"); // desktop side-rail kit (hidden on mobile)
+  if(gk) gk.innerHTML=S.gadgets.length
+    ? S.gadgets.map(id=>{const g=GADGET_BY_ID[id];return `<div class="gchip" title="${g.name}: ${g.desc}" onclick="gadgetInfo('${id}')">${g.icon}</div>`;}).join("")
+    : '<span class="kitempty">No gadgets yet — grab some in the Gear Cache to build combos.</span>';
+}
+function gadgetInfo(id){const g=GADGET_BY_ID[id]; if(g) toast(g.name+" — "+g.desc);}
+
+function renderHand(){
+  const h=$("hand"); h.innerHTML="";
+  const maxed=S.selected.length>=5; // 5 already chosen → others can't be added yet
+  for(const c of S.hand){
+    const sel=S.selected.includes(c.uid);
+    const d=document.createElement("div");
+    d.className="card"+(sel?" sel":"")+((maxed&&!sel)?" maxed":"");
+    d.style.color=SYMBOLS[c.sym].color;
+    d.innerHTML=`<div class="top" style="background:${SYMBOLS[c.sym].color}"></div>
+      <div class="val" style="color:${SYMBOLS[c.sym].color}">${c.val}</div>
+      <div class="ico">${SYMBOLS[c.sym].icon}</div>
+      <div class="nm">${symLabel(c.sym).toUpperCase()}</div>
+      <div class="check">✓</div>`;
+    d.onclick=()=>toggleSelect(c.uid);
+    h.appendChild(d);
+  }
+  $("selcount").textContent=S.selected.length;
+  renderPreview();
+}
+
+function renderPreview(){
+  const p=$("preview"), btn=$("playBtn");
+  if(!S.selected.length){
+    p.className="preview empty"; p.textContent="Select crew to plan your play";
+    btn.textContent="SELECT CREW"; btn.disabled=true;
+    return;
+  }
+  const cards=S.hand.filter(c=>S.selected.includes(c.uid));
+  const b=scorePlay(cards);
+  const m=(Math.abs(b.effMult-Math.round(b.effMult))<0.001)?Math.round(b.effMult):b.effMult.toFixed(1);
+  p.className="preview";
+  p.innerHTML=`<span class="nm">${b.name}</span>`+
+    `<span class="calc">$${fmt(b.chips)} <span class="x">× ${m}</span> <span class="eq">= $${fmt(b.total)}</span></span>`;
+  btn.textContent="PLAY FOR $"+fmt(b.total); btn.disabled=false;
+  $("hint").style.display="none"; // once selecting, the intro tip is redundant (avoids overlap on short screens)
+}
+
+function toggleSelect(uid){
+  ensureAudio();
+  // Stricter staging rule: tapping a card stages it; tapping a staged card no
+  // longer deselects it. The only way to remove staged crew is 🔥 Burn (onDiscard).
+  if(S.selected.includes(uid)){ toast("🔥 Burn to remove staged crew"); return; }
+  if(S.selected.length>=5){ toast("Max 5 crew per play"); return; }
+  S.selected.push(uid); blip(420+S.selected.length*60,.05,"square",.05);
+  renderHand();
+  $("playBtn").disabled=S.selected.length===0;
+  $("discardBtn").disabled=S.selected.length===0||S.discardsLeft<=0;
+}
+
+/* ============================================================= *
+ *  AUDIO (synth, zero assets)
+ * ============================================================= */
+let AC=null, muted=localStorage.getItem(MUTE_KEY)==="1";
+function ensureAudio(){ if(!AC && !muted){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} if(AC&&AC.state==="suspended")AC.resume(); }
+function blip(freq,dur=.08,type="sine",vol=.18){
+  if(muted||!AC) return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.value=freq;o.connect(g);g.connect(AC.destination);
+  const t=AC.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.start(t);o.stop(t+dur+.02);
+}
+function chord(freqs,dur=.4,type="triangle",vol=.16){freqs.forEach(f=>blip(f,dur,type,vol));}
+function sfxWin(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>blip(f,.35,"triangle",.18),i*90));}
+function sfxBust(){[330,247,196,147].forEach((f,i)=>setTimeout(()=>blip(f,.4,"sawtooth",.14),i*110));}
+function sfxBuy(){blip(660,.06,"square",.12);setTimeout(()=>blip(990,.08,"square",.12),60);}
+function setMute(m){muted=m;localStorage.setItem(MUTE_KEY,m?"1":"0");$("mute").textContent=m?"🔇":"🔊";if(!m)ensureAudio();}
+
+/* ============================================================= *
+ *  FX
+ * ============================================================= */
+function flashColor(col){const f=$("flash");f.style.background=`radial-gradient(circle at 50% 45%, ${col}, transparent 70%)`;f.classList.remove("go");void f.offsetWidth;f.classList.add("go");}
+function shake(){const a=$("app");a.classList.remove("shake");void a.offsetWidth;a.classList.add("shake");}
+function floatNum(text,col){
+  const st=$("stage"),el=document.createElement("div");el.className="float";el.textContent=text;el.style.color=col;
+  el.style.left=(30+Math.random()*40)+"%";el.style.top=(30+Math.random()*20)+"%";
+  st.appendChild(el);setTimeout(()=>el.remove(),1000);
+}
+function confettiBurst(colors){
+  const st=$("stage");
+  for(let i=0;i<46;i++){
+    const c=document.createElement("div");c.className="confetti";
+    c.style.background=colors[i%colors.length];
+    c.style.left=(50+(Math.random()*60-30))+"%";c.style.top="20%";
+    c.style.animation=`drop ${0.9+Math.random()*0.8}s cubic-bezier(.3,.6,.4,1) ${Math.random()*0.25}s forwards`;
+    c.style.transform=`rotate(${Math.random()*360}deg)`;
+    st.appendChild(c);setTimeout(()=>c.remove(),2200);
+  }
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+let SKIP=false;
+$("stage").addEventListener("click",()=>{SKIP=true;});
+
+async function animatePlay(b){
+  SKIP=false;
+  $("hint").style.display="none";
+  const fx=$("scorefx"),chipsEl=$("fxchips"),multEl=$("fxmult"),totEl=$("fxtotal"),nameEl=$("fxname");
+  fx.style.display="block"; chipsEl.textContent="0"; chipsEl.style.color="#cfe6ff";
+  multEl.style.opacity=0; totEl.style.opacity=0; nameEl.style.opacity=0;
+  // chips count up, per card
+  let chips=0;
+  for(let i=0;i<b.steps.length;i++){
+    const s=b.steps[i]; chips+=s.amt;
+    chipsEl.textContent=fmt(chips); chipsEl.classList.remove("pop");void chipsEl.offsetWidth;chipsEl.classList.add("pop");
+    const col=s.sym?SYMBOLS[s.sym].color:"var(--gold)";
+    chipsEl.style.color=s.sym?SYMBOLS[s.sym].color:"#cfe6ff";
+    floatNum("+"+s.amt, col);
+    blip(380+i*70+ (b.bestSize>=3?i*40:0), .09, "triangle", .14);
+    if(!SKIP) await wait(150);
+  }
+  if(!SKIP) await wait(120);
+  // mult reveal
+  const m=(Math.abs(b.effMult-Math.round(b.effMult))<0.001)?Math.round(b.effMult):b.effMult.toFixed(1);
+  multEl.textContent="× "+m; multEl.style.color=typeof b.col==="string"&&b.col.startsWith("linear")?"#ffce54":b.col;
+  multEl.style.opacity=1; multEl.classList.add("slam");
+  nameEl.textContent=b.name; nameEl.style.opacity=1;
+  flashColor(typeof b.col==="string"&&b.col.startsWith("linear")?"rgba(255,206,84,.4)":b.col+"55");
+  // rising arpeggio scaled to mult
+  const steps=clamp(Math.round(b.effMult),2,10);
+  for(let i=0;i<steps;i++) setTimeout(()=>blip(420*Math.pow(1.08,i),.07,"square",.12),i*45);
+  if(!SKIP) await wait(360);
+  // total slam
+  totEl.textContent=fmt(b.total); totEl.style.opacity=1; totEl.classList.remove("slam");void totEl.offsetWidth;totEl.classList.add("slam");
+  chord([523,659,784],.5,"triangle",.16); shake();
+  if(b.bestSize>=4||b.rainbow) confettiBurst(["#ffce54","#34e0e0","#ff5fa2","#7ee04a"]);
+  if(!SKIP) await wait(620);
+  // bank into job score
+  S.jobScore+=b.total;
+  fx.style.display="none"; multEl.classList.remove("slam"); totEl.classList.remove("slam");
+  renderHUD();
+}
+
+/* ============================================================= *
+ *  GAME FLOW
+ * ============================================================= */
+function startRun(){
+  S.phase="job"; startJob(0); save();
+}
+function startJob(idx){
+  S.jobIndex=idx; S.phase="job";
+  S.plays=playsPerJob(); S.discardsLeft=discardsPerJob();
+  S.jobScore=0; S.selected=[];
+  // seeded shuffle for this job (job 1 identical for everyone with starting deck)
+  S.drawPile=shuffle(S.deck,streamRng("shuffle:"+idx));
+  S.hand=[]; S.discardPile=[];
+  drawToFull();
+  show("game"); renderHUD(); renderHand();
+  $("hint").style.display="block";
+  $("hint").innerHTML="Tap crew to add them to the lock.<br>Matching crew chain into bigger multipliers.";
+  $("scorefx").style.display="none";
+  $("playBtn").disabled=true; $("discardBtn").disabled=true;
+  save();
+}
+function drawToFull(){
+  const want=handSize();
+  while(S.hand.length<want && S.drawPile.length>0) S.hand.push(S.drawPile.shift());
+  // if draw pile exhausted, recycle discards (seeded)
+  if(S.hand.length<want && S.discardPile.length>0){
+    S.drawPile=shuffle(S.discardPile,streamRng("recycle:"+S.jobIndex+":"+S.hand.length)); S.discardPile=[];
+    while(S.hand.length<want && S.drawPile.length>0) S.hand.push(S.drawPile.shift());
+  }
+}
+
+async function onPlay(){
+  if(S.selected.length===0||S.plays<=0) return;
+  ensureAudio();
+  const cards=S.hand.filter(c=>S.selected.includes(c.uid));
+  const b=scorePlay(cards);
+  // lock input
+  $("playBtn").disabled=true; $("discardBtn").disabled=true;
+  document.querySelectorAll(".card").forEach(el=>el.style.pointerEvents="none");
+  // track signature (best single play) + biggest mult
+  if(!S.signature || b.total>S.signature.total)
+    S.signature={name:b.name,total:b.total,size:b.bestSize,sym:b.bestSym,rainbow:b.rainbow};
+  S.biggestMult=Math.max(S.biggestMult,b.effMult);
+  S.plays--;
+  // remove played cards from hand to discard
+  S.discardPile.push(...cards);
+  S.hand=S.hand.filter(c=>!S.selected.includes(c.uid));
+  S.selected=[];
+  await animatePlay(b);
+  drawToFull(); renderHand();
+  document.querySelectorAll(".card").forEach(el=>el.style.pointerEvents="auto");
+  save();
+  // job resolves only when plays run out — target is a bust threshold, not a stop point,
+  // so players use every play to pile up loot (wider, brag-worthy score spread)
+  if(S.plays<=0){
+    await wait(300);
+    if(S.jobScore>=JOBS[S.jobIndex].target) winJob(); else loseRun();
+    return;
+  }
+  $("playBtn").disabled=true; $("discardBtn").disabled=true;
+}
+
+function onDiscard(){
+  if(S.selected.length===0||S.discardsLeft<=0) return;
+  ensureAudio(); blip(220,.12,"sawtooth",.1);
+  const cards=S.hand.filter(c=>S.selected.includes(c.uid));
+  S.discardPile.push(...cards);
+  S.hand=S.hand.filter(c=>!S.selected.includes(c.uid));
+  S.selected=[]; S.discardsLeft--;
+  drawToFull(); renderHUD(); renderHand();
+  $("playBtn").disabled=true; $("discardBtn").disabled=true; save();
+}
+
+function banner(big,sub,col){
+  const st=$("stage"); const old=st.querySelector(".banner"); if(old)old.remove();
+  const b=document.createElement("div");b.className="banner";
+  b.innerHTML=`<div class="big" style="color:${col}">${big}</div><div class="sub">${sub}</div>`;
+  st.appendChild(b);b.querySelector(".big").classList.add("slam");
+  setTimeout(()=>b.remove(),1600);
+}
+
+function winJob(){
+  const job=JOBS[S.jobIndex];
+  S.totalScore+=S.jobScore;
+  const reward=5+(S.jobIndex+1)+Math.min(Math.floor(S.jobScore/job.target),6)+sumE("extraCash");
+  S.cash+=reward;
+  S.jobResults.push({name:job.name,score:S.jobScore});
+  banner("CRACKED!","+ "+reward+" loot  ·  vault open","var(--gold)");
+  sfxWin(); confettiBurst(["#ffce54","#34e0e0","#ff5fa2","#7ee04a","#b06bff"]);
+  save();
+  setTimeout(()=>{
+    if(S.jobIndex+1>=JOBS.length) winRun();
+    else enterShop();
+  },1500);
+}
+function loseRun(){
+  S.totalScore+=S.jobScore;
+  S.outcome="busted"; S.bustedOn=S.jobIndex+1; S.completed=true; S.phase="result";
+  banner("BUSTED","the alarm tripped…","var(--bad)"); sfxBust();
+  save();
+  JUST_FINISHED=true; // auto-open the leaderboard once after this finish
+  setTimeout(()=>showResult(),1500);
+}
+function winRun(){
+  S.outcome="cleared"; S.completed=true; S.phase="result";
+  // clean-getaway bonus
+  S.totalScore+=Math.round(S.totalScore*0.10);
+  banner("VAULT CLEARED","clean getaway +10%","var(--good)"); sfxWin();
+  save();
+  JUST_FINISHED=true; // auto-open the leaderboard once after this finish
+  setTimeout(()=>showResult(),1600);
+}
+
+/* ============================================================= *
+ *  SHOP
+ * ============================================================= */
+function generateShop(idx,reroll){
+  const rng=streamRng("shop:"+idx+":"+reroll);
+  const items=[];
+  // 2 gadgets (avoid dupes within the offer)
+  const pool=shuffle(GADGETS,rng);
+  items.push({kind:"gadget",g:pool[0]});
+  items.push({kind:"gadget",g:pool[1]});
+  // 2 crew cards
+  for(let i=0;i<2;i++){
+    const sym=pick(SYMS,rng);
+    const val=3+Math.floor(rng()*7); // 3..9
+    items.push({kind:"crew",sym,val,price:2+Math.ceil(val/2)});
+  }
+  return items;
+}
+function enterShop(){
+  S.phase="shop"; S.shop={reroll:0,bought:[]};
+  show("shop"); renderShop(); save();
+}
+function renderShop(){
+  $("shopcash").textContent=S.cash;
+  // owned gadgets
+  const ow=$("owned");
+  if(S.gadgets.length===0) ow.innerHTML='<span class="empty">No gadgets yet — buy some to build combos.</span>';
+  else ow.innerHTML=S.gadgets.map(id=>`<div class="gchip" title="${GADGET_BY_ID[id].name}: ${GADGET_BY_ID[id].desc}" onclick="gadgetInfo('${id}')">${GADGET_BY_ID[id].icon}</div>`).join("");
+  // offers
+  const items=generateShop(S.jobIndex,S.shop.reroll);
+  const wrap=$("offers"); wrap.innerHTML="";
+  items.forEach((it,i)=>{
+    const sold=S.shop.bought.includes(i);
+    const price=it.kind==="gadget"?it.g.price:it.price;
+    const can=S.cash>=price && !sold;
+    const div=document.createElement("div");
+    div.className="offer"+(sold?" sold":"");
+    if(it.kind==="gadget"){
+      div.innerHTML=`<div class="face">${it.g.icon}</div>
+        <div class="info"><div class="tag">${it.g.tag} · Gadget</div><div class="ti">${it.g.name}</div><div class="de">${it.g.desc}</div></div>
+        <div class="buy"><button ${can?"":"disabled"}>${sold?"SOLD":"💰 "+price}</button></div>`;
+    }else{
+      const col=SYMBOLS[it.sym].color;
+      div.innerHTML=`<div class="face"><div class="top" style="background:${col}"></div><div class="val" style="color:${col}">${it.val}</div>${SYMBOLS[it.sym].icon}</div>
+        <div class="info"><div class="tag">Crew Card</div><div class="ti">${symLabel(it.sym)} · ${it.val} loot</div><div class="de">Adds a ${symLabel(it.sym)} worth ${it.val} to your deck.</div></div>
+        <div class="buy"><button ${can?"":"disabled"}>${sold?"SOLD":"💰 "+price}</button></div>`;
+    }
+    if(can) div.querySelector("button").onclick=()=>buyItem(it,i,price);
+    wrap.appendChild(div);
+  });
+  $("rerollcost").textContent=2+S.shop.reroll;
+  $("rerollBtn").disabled=S.cash<(2+S.shop.reroll);
+}
+function buyItem(it,i,price){
+  if(S.cash<price) return;
+  S.cash-=price; S.shop.bought.push(i);
+  ensureAudio(); sfxBuy();
+  if(it.kind==="gadget"){ S.gadgets.push(it.g.id); toast(it.g.name+" acquired"); }
+  else{ S.deck.push({uid:S.nextUid++,sym:it.sym,val:it.val}); toast(symLabel(it.sym)+" joined the crew"); }
+  renderShop(); save();
+}
+function reroll(){
+  const cost=2+S.shop.reroll;
+  if(S.cash<cost) return;
+  S.cash-=cost; S.shop.reroll++; S.shop.bought=[];
+  ensureAudio(); blip(520,.07,"square",.1);
+  renderShop(); save();
+}
+function nextJob(){ startJob(S.jobIndex+1); }
+
+/* ============================================================= *
+ *  RESULT + SHARE CARD
+ * ============================================================= */
+let shareBlob=null;
+
+function resultData(){
+  const score=S.totalScore;
+  const rank=rankFor(score);
+  const sig=S.signature;
+  let sigText="Smash & grab";
+  if(sig){
+    const m=sig.rainbow?"":(sig.size>=2?` ×${groupMult(Math.min(sig.size,5))}`:"");
+    sigText=`${sig.name}${m} → ${fmt(sig.total)}`;
+  }
+  const build=S.gadgets.map(id=>GADGET_BY_ID[id]);
+  const status=S.outcome==="cleared"?`Vault Cleared · ${JOBS.length}/${JOBS.length}`:`Busted on Lock ${S.bustedOn}/${JOBS.length}`;
+  return {score,rank,sig,sigText,build,status,cleared:S.outcome==="cleared"};
+}
+
+function showResult(){
+  S.phase="result"; save();
+  const d=resultData();
+  drawShareCard(d);
+  const canvas=$("sharecanvas");
+  $("cardimg").src=canvas.toDataURL("image/png");
+  canvas.toBlob(b=>{shareBlob=b;},"image/png");
+  show("result");
+  startCountdown();
+  submitOfficialToLeaderboard();                 // official-only, idempotent per UTC day
+  if(JUST_FINISHED){ JUST_FINISHED=false; setTimeout(afterRunPrompt,900); } // gentle, once after finishing
+}
+
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+function drawShareCard(d){
+  const cv=$("sharecanvas"),c=cv.getContext("2d"),W=cv.width,H=cv.height;
+  const DISP=document.fonts&&document.fonts.check('700 10px "Space Grotesk"')?"Space Grotesk":"sans-serif";
+  const MONO=document.fonts&&document.fonts.check('800 10px "JetBrains Mono"')?"JetBrains Mono":"monospace";
+  // bg
+  let g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,"#0c1124");g.addColorStop(.55,"#0a0d1c");g.addColorStop(1,"#070912");
+  c.fillStyle=g;c.fillRect(0,0,W,H);
+  // accent radial behind score
+  const rg=c.createRadialGradient(W/2,H*0.46,40,W/2,H*0.46,W*0.7);
+  rg.addColorStop(0,d.cleared?"rgba(255,206,84,.20)":"rgba(255,93,115,.16)");rg.addColorStop(1,"rgba(0,0,0,0)");
+  c.fillStyle=rg;c.fillRect(0,0,W,H);
+  // corner glows
+  const cg=c.createRadialGradient(W*0.9,H*0.05,10,W*0.9,H*0.05,500);cg.addColorStop(0,"rgba(176,107,255,.18)");cg.addColorStop(1,"rgba(0,0,0,0)");c.fillStyle=cg;c.fillRect(0,0,W,H);
+  // diagonal security stripes (subtle)
+  c.save();c.globalAlpha=.04;c.strokeStyle="#fff";c.lineWidth=2;
+  for(let x=-H;x<W;x+=42){c.beginPath();c.moveTo(x,0);c.lineTo(x+H,H);c.stroke();}c.restore();
+  // border frame
+  c.strokeStyle="rgba(255,255,255,.10)";c.lineWidth=2;roundRect(c,22,22,W-44,H-44,34);c.stroke();
+  c.strokeStyle="rgba(255,206,84,.25)";c.lineWidth=1;roundRect(c,34,34,W-68,H-68,26);c.stroke();
+
+  c.textAlign="center";
+  // header
+  c.fillStyle="#ffce54";c.font=`700 30px ${MONO}`;c.letterSpacing="18px";
+  c.fillText("◆ VAULTURE ◆",W/2,116);c.letterSpacing="0px";
+  // day pill
+  c.fillStyle="rgba(255,255,255,.06)";roundRect(c,W/2-150,140,300,56,28);c.fill();
+  c.strokeStyle="rgba(255,255,255,.14)";c.lineWidth=1.5;roundRect(c,W/2-150,140,300,56,28);c.stroke();
+  c.fillStyle="#cfd6ff";c.font=`700 26px ${MONO}`;c.fillText(`DAY ${DAY.dayNumber}`,W/2,178);
+
+  // LABEL
+  c.fillStyle="#9aa6cf";c.font=`700 26px ${MONO}`;c.letterSpacing="6px";
+  c.fillText("TODAY'S TAKE",W/2,300);c.letterSpacing="0px";
+  // SCORE (big)
+  const scoreStr=fmt(d.score);
+  let fs=190; c.font=`800 ${fs}px ${MONO}`;
+  while(c.measureText(scoreStr).width>W-150 && fs>90){fs-=8;c.font=`800 ${fs}px ${MONO}`;}
+  c.shadowColor="rgba(255,206,84,.55)";c.shadowBlur=50;
+  const sg=c.createLinearGradient(0,300,0,470);sg.addColorStop(0,"#fff0c0");sg.addColorStop(1,"#ffb01f");
+  c.fillStyle=sg;c.fillText(scoreStr,W/2,300+fs*0.78);c.shadowBlur=0;
+
+  // rank
+  const rankY=300+fs*0.78+78;
+  c.fillStyle=d.cleared?"#4be3a6":"#ff7a8c";c.font=`700 56px ${DISP}`;
+  c.fillText(d.rank.toUpperCase(),W/2,rankY);
+
+  // divider
+  c.strokeStyle="rgba(255,255,255,.10)";c.lineWidth=2;c.beginPath();c.moveTo(140,rankY+40);c.lineTo(W-140,rankY+40);c.stroke();
+
+  // signature
+  let y=rankY+110;
+  c.fillStyle="#6b76a3";c.font=`700 22px ${MONO}`;c.letterSpacing="5px";c.fillText("SIGNATURE MOVE",W/2,y);c.letterSpacing="0px";
+  c.fillStyle="#eef2ff";c.font=`700 40px ${DISP}`;
+  let sigt=d.sigText; if(c.measureText(sigt).width>W-140){c.font=`700 32px ${DISP}`;}
+  c.fillText(sigt,W/2,y+56);
+
+  // build = gadget name pills (canvas-native, no emoji dependency)
+  y+=128;
+  c.fillStyle="#6b76a3";c.font=`700 22px ${MONO}`;c.letterSpacing="5px";c.fillText("THE CREW KIT",W/2,y);c.letterSpacing="0px";
+  const names=d.build.slice(0,6).map(g=>g.name);
+  const extra=d.build.length-names.length; if(extra>0) names.push("+"+extra+" more");
+  if(names.length){
+    c.font=`700 25px ${DISP}`; const padX=20, ph=50, vgap=12, hgap=12, maxW=W-130;
+    const pills=names.map(n=>({n,w:Math.ceil(c.measureText(n).width)+padX*2}));
+    const rows=[[]]; let rw=0;
+    for(const p of pills){ const cur=rows[rows.length-1];
+      if(cur.length>0 && rw+hgap+p.w>maxW){ rows.push([p]); rw=p.w; }
+      else { cur.push(p); rw=cur.length===1?p.w:rw+hgap+p.w; } }
+    let ry=y+26; c.textBaseline="middle";
+    for(const row of rows){
+      const tw=row.reduce((a,p)=>a+p.w,0)+hgap*(row.length-1); let rx=W/2-tw/2;
+      for(const p of row){
+        c.fillStyle="rgba(255,206,84,.08)";roundRect(c,rx,ry,p.w,ph,14);c.fill();
+        c.strokeStyle="rgba(255,206,84,.32)";c.lineWidth=1.5;roundRect(c,rx,ry,p.w,ph,14);c.stroke();
+        c.fillStyle="#ffe6a3";c.fillText(p.n,rx+p.w/2,ry+ph/2+2); rx+=p.w+hgap;
+      }
+      ry+=ph+vgap;
+    }
+    c.textBaseline="alphabetic"; y=ry+4;
+  }else{ c.fillStyle="#8089b3";c.font=`600 28px ${DISP}`;c.fillText("Bare-handed — no gadgets",W/2,y+52); y+=92; }
+
+  // status strip
+  y+=24;
+  c.fillStyle=d.cleared?"rgba(75,227,166,.12)":"rgba(255,93,115,.12)";
+  roundRect(c,W/2-260,y,520,64,18);c.fill();
+  c.fillStyle=d.cleared?"#4be3a6":"#ff7a8c";c.font=`800 30px ${MONO}`;
+  c.fillText((d.cleared?"✓ ":"✕ ")+d.status,W/2,y+42);
+
+  // footer
+  c.fillStyle="#8089b3";c.font=`700 28px ${MONO}`;c.letterSpacing="2px";
+  c.fillText("CRACK TODAY'S VAULT",W/2,H-116);c.letterSpacing="0px";
+  c.fillStyle="#ffce54";c.font=`800 34px ${MONO}`;c.fillText(URL_DISPLAY,W/2,H-70);
+}
+
+function shareText(d){
+  return `${GAME_NAME} — Day ${DAY.dayNumber}\n`+
+    `💰 Today's Take: $${fmt(d.score)} — ${d.rank}\n`+
+    `🎭 ${d.sigText}\n`+
+    `${d.cleared?"🏆":"🚨"} ${d.status}\n`+
+    `Crack today's vault → ${URL_DISPLAY}`;
+}
+
+async function onShare(){
+  const d=resultData(); const text=shareText(d);
+  try{
+    if(shareBlob && navigator.canShare){
+      const file=new File([shareBlob],`vaulture-day-${DAY.dayNumber}.png`,{type:"image/png"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],text,title:GAME_NAME});
+        return;
+      }
+    }
+    if(navigator.share){ await navigator.share({text,title:GAME_NAME}); return; }
+  }catch(e){ if(e&&e.name==="AbortError")return; }
+  // fallback
+  copyToClipboard(text); saveImage(); toast("Copied text + saved image");
+}
+function copyToClipboard(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText) return navigator.clipboard.writeText(text).catch(()=>legacyCopy(text));
+  legacyCopy(text);
+}
+function legacyCopy(text){const t=document.createElement("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.select();try{document.execCommand("copy");}catch(e){}t.remove();}
+function onCopy(){ copyToClipboard(shareText(resultData())); toast("Result copied to clipboard"); }
+function saveImage(){const a=document.createElement("a");a.href=$("sharecanvas").toDataURL("image/png");a.download=`vaulture-day-${DAY.dayNumber}.png`;document.body.appendChild(a);a.click();a.remove();}
+function onSave(){ saveImage(); toast("Image saved"); }
+
+/* countdown to next UTC midnight */
+let cdTimer=null;
+function startCountdown(){
+  const next=DAY.utcMs+86400000;
+  function tick(){
+    let s=Math.max(0,Math.floor((next-Date.now())/1000));
+    const h=String(Math.floor(s/3600)).padStart(2,"0");
+    const m=String(Math.floor(s%3600/60)).padStart(2,"0");
+    const ss=String(s%60).padStart(2,"0");
+    $("countdown").textContent=`${h}:${m}:${ss}`;
+    if(s<=0){ clearInterval(cdTimer); $("countdown").textContent="Ready — reload for today's run"; }
+  }
+  tick(); if(cdTimer)clearInterval(cdTimer); cdTimer=setInterval(tick,1000);
+}
+
+/* ---------------- Toast ---------------- */
+let toastT=null;
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1700);}
+
+/* ============================================================= *
+ *  TUTORIAL  (self-contained, practice-only)
+ *  - Never calls save(), show(), startJob(), or onPlay(), so it
+ *    cannot consume the official daily run or write the official score.
+ *  - Only READS the run via scorePlay() (an empty gadget list for a
+ *    first-time player → clean preview numbers). Uses NEW storage keys
+ *    so existing save data is untouched.
+ * ============================================================= */
+const TUT_DONE_KEY="vaultureTutorialComplete";
+const TUT_SKIP_KEY="vaultureTutorialSkipped";
+const tls={ get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},
+  set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}},
+  del:k=>{try{localStorage.removeItem(k);}catch(e){}} };
+
+// scripted practice hand — Spark-heavy (4× Hacker) so a matching multiplier is easy to find.
+// sym uses STABLE INTERNAL IDS (Hacker=Spark, Mastermind=Rook, Demolition=Ram, Face=Veil, Driver=Dash).
+const TUT_HAND=[
+  {uid:"t0",sym:"Hacker",val:5},{uid:"t1",sym:"Hacker",val:3},{uid:"t2",sym:"Hacker",val:2},
+  {uid:"t3",sym:"Mastermind",val:4},{uid:"t4",sym:"Face",val:3},{uid:"t5",sym:"Driver",val:2},
+  {uid:"t6",sym:"Demolition",val:4},{uid:"t7",sym:"Hacker",val:3},
+];
+const TUT={ open:false, step:0, sel:[], committed:false, fromPhase:"intro", lastFocus:null };
+
+// step index 1 & 2 are the interactive "select" steps; others are read/commit/finish
+const TUT_STEPS=[
+  {t:"The Daily Run", b:"Vaulture gives everyone the <b>same run</b> each day. You get just <b>one official scored attempt</b>.", spot:"tutHud", tag:"Today", mode:"next"},
+  {t:"Your Hand", b:"These are your crew cards. <b>Tap a card</b> to add it to your play.", spot:"tutHand", tag:"Tap a card", mode:"act"},
+  {t:"Build a Match", b:"Matching crew chain into bigger multipliers. <b>Add more of the same crew</b> to grow your multiplier.", spot:"tutHand", tag:"Add a match", mode:"act"},
+  {t:"Read the Preview", b:"Check the preview before you commit — it shows your <b>combo, loot and multiplier</b>, then the total.", spot:"tutPreview", tag:"Preview", mode:"next"},
+  {t:"Commit the Play", b:"When you're ready, <b>commit the play</b>. In a real run, this hand counts toward your score.", spot:"tutPlay", tag:"Commit", mode:"commit"},
+  {t:"That's the Loop", b:"Build the best score you can, crack each lock, finish the run, and share your spoiler-free result.", spot:null, mode:"finish"},
+];
+
+function tutSelCards(){ return TUT_HAND.filter(c=>TUT.sel.includes(c.uid)); }
+function tutNeedMet(){
+  if(TUT.step===1) return TUT.sel.length>=1;
+  if(TUT.step===2){ const b=TUT.sel.length?scorePlay(tutSelCards()):null; return !!b && b.bestSize>=2; }
+  return true;
+}
+
+function tutRenderHand(){
+  const h=$("tutHand"); if(!h) return; h.innerHTML="";
+  const maxed=TUT.sel.length>=5;
+  for(const c of TUT_HAND){
+    const sel=TUT.sel.includes(c.uid);
+    const d=document.createElement("div");
+    d.className="card"+(sel?" sel":"")+((maxed&&!sel)?" maxed":"");
+    d.style.color=SYMBOLS[c.sym].color;
+    d.setAttribute("role","button"); d.tabIndex=0; d.setAttribute("aria-pressed",sel?"true":"false");
+    d.setAttribute("aria-label",symLabel(c.sym)+" worth "+c.val+(sel?", selected":""));
+    d.innerHTML=`<div class="top" style="background:${SYMBOLS[c.sym].color}"></div>`+
+      `<div class="val" style="color:${SYMBOLS[c.sym].color}">${c.val}</div>`+
+      `<div class="ico">${SYMBOLS[c.sym].icon}</div>`+
+      `<div class="nm">${symLabel(c.sym).toUpperCase()}</div>`+
+      `<div class="check">✓</div>`;
+    d.onclick=()=>tutToggle(c.uid);
+    d.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); tutToggle(c.uid); } };
+    h.appendChild(d);
+  }
+  tutRenderPreview();
+  tutApplySpot();
+}
+function tutRenderPreview(){
+  const p=$("tutPreview"), btn=$("tutPlay"); if(!p||!btn) return;
+  if(!TUT.sel.length){
+    p.className="preview empty"; p.textContent="Tap crew to plan your play";
+    btn.textContent="SELECT CREW"; btn.disabled=true; return;
+  }
+  const b=scorePlay(tutSelCards());
+  const m=(Math.abs(b.effMult-Math.round(b.effMult))<0.001)?Math.round(b.effMult):b.effMult.toFixed(1);
+  p.className="preview";
+  p.innerHTML=`<span class="nm">${b.name}</span>`+
+    `<span class="calc">$${fmt(b.chips)} <span class="x">× ${m}</span> <span class="eq">= $${fmt(b.total)}</span></span>`;
+  btn.textContent="PLAY FOR $"+fmt(b.total);
+  btn.disabled=(TUT.step!==4)||TUT.committed; // commit only on the commit step
+}
+function tutToggle(uid){
+  if(TUT.committed) return;
+  if(TUT.step!==1 && TUT.step!==2) return; // selecting is only taught in the two select steps
+  const i=TUT.sel.indexOf(uid);
+  if(i>=0) TUT.sel.splice(i,1);
+  else{ if(TUT.sel.length>=5){ toast("Max 5 crew per play"); return; }
+    TUT.sel.push(uid); ensureAudio(); blip(420+TUT.sel.length*60,.05,"square",.05); }
+  tutRenderHand();
+  tutSyncStep();
+}
+
+function tutClearSpot(){
+  document.querySelectorAll("#tutGuide .tut-spot").forEach(el=>el.classList.remove("tut-spot"));
+  document.querySelectorAll("#tutGuide .tut-tag").forEach(el=>el.remove());
+}
+function tutApplySpot(){
+  tutClearSpot();
+  const st=TUT_STEPS[TUT.step]; if(!st||!st.spot) return;
+  const el=$(st.spot); if(!el) return;
+  el.classList.add("tut-spot");
+  if(st.tag){ const t=document.createElement("div"); t.className="tut-tag"; t.textContent=st.tag; el.appendChild(t); }
+  // keep the highlighted region on-screen even on short viewports (panel scrolls internally)
+  try{ el.scrollIntoView({block:"center"}); }catch(e){ try{el.scrollIntoView();}catch(_){} }
+}
+
+function tutBtn(label,cls,fn){ const b=document.createElement("button"); b.type="button"; b.className=cls; b.textContent=label; if(fn) b.onclick=fn; return b; }
+function tutRenderButtons(){
+  const st=TUT_STEPS[TUT.step], box=$("tutBtns"); box.innerHTML="";
+  if(st.mode==="finish"){
+    box.className="crow col";
+    const begin=(TUT.fromPhase==="intro" && !(S&&S.completed));
+    box.appendChild(tutBtn(begin?"▶ Begin Today's Run":"Back to Game","btn",tutFinishPrimary));
+    box.appendChild(tutBtn("Replay Tutorial","btn ghost",tutStart));
+    box.appendChild(tutBtn("Close","tut-skip",tutClose));
+    return;
+  }
+  box.className="crow";
+  box.appendChild(tutBtn("Skip tutorial","tut-skip",tutSkip));
+  if(st.mode==="next"){ box.appendChild(tutBtn("Next →","btn",()=>tutGo(TUT.step+1))); }
+  else if(st.mode==="act"){ const n=tutBtn("Next →","btn",()=>tutGo(TUT.step+1)); n.disabled=!tutNeedMet(); box.appendChild(n); }
+  else if(st.mode==="commit"){ const n=tutBtn("Press PLAY ↑","btn",null); n.disabled=true; box.appendChild(n); }
+}
+function tutSyncStep(){
+  const fb=$("tutFeedback");
+  if(TUT.step===1){ fb.textContent = TUT.sel.length>=1 ? "✓ That crew is in your play — tap Next." : ""; }
+  else if(TUT.step===2){
+    const b=TUT.sel.length?scorePlay(tutSelCards()):null;
+    if(b && b.bestSize>=2){ const m=(Math.abs(b.effMult-Math.round(b.effMult))<0.001)?Math.round(b.effMult):b.effMult.toFixed(1);
+      fb.textContent="✓ Matched — × "+m+" multiplier! Tap Next."; }
+    else fb.textContent="";
+  } else fb.textContent="";
+  tutRenderButtons();
+}
+function tutFocusStep(){
+  const st=TUT_STEPS[TUT.step]; let el=null;
+  if(st.mode==="act") el=$("tutHand").querySelector(".card");
+  else if(st.mode==="commit") el=$("tutPlay");
+  else el=$("tutBtns").querySelector(".btn:not([disabled])")||$("tutBtns").querySelector("button");
+  if(el&&el.focus){ try{el.focus();}catch(e){} }
+}
+function tutGo(i){
+  TUT.step=i;
+  const st=TUT_STEPS[i];
+  $("tutCoachTitle").textContent="Step "+(i+1)+" / "+TUT_STEPS.length+" · "+st.t;
+  $("tutCoachBody").innerHTML=st.b;
+  $("tutFeedback").textContent="";
+  $("tutDots").innerHTML=TUT_STEPS.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join("");
+  if(i===TUT_STEPS.length-1) tls.set(TUT_DONE_KEY,"1"); // reaching the finish step = completed
+  tutRenderHand();
+  tutSyncStep();
+  setTimeout(tutFocusStep,40);
+}
+function tutCommit(){
+  if(TUT.step!==4 || TUT.committed || !TUT.sel.length) return;
+  TUT.committed=true; ensureAudio();
+  const b=scorePlay(tutSelCards());
+  $("tutPlay").disabled=true;
+  document.querySelectorAll("#tutHand .card").forEach(el=>{ el.style.pointerEvents="none"; el.tabIndex=-1; });
+  const p=$("tutPreview"); p.classList.remove("pop"); void p.offsetWidth; p.classList.add("pop");
+  blip(523,.3,"triangle",.16); setTimeout(()=>blip(784,.3,"triangle",.16),90); setTimeout(()=>blip(1046,.3,"triangle",.16),180);
+  toast("Nice play! +$"+fmt(b.total));
+  setTimeout(()=>tutGo(5),720);
+}
+
+function tutStart(){
+  TUT.open=true; TUT.step=0; TUT.sel=[]; TUT.committed=false;
+  $("tutDay").textContent=DAY.dayNumber;
+  hideScrim("tutFirstScrim"); hideScrim("howtoScrim");
+  showScrim("tutGuide");
+  tutGo(0);
+}
+function openGuidedTutorial(){ TUT.fromPhase=(S&&S.phase)||"intro"; tutStart(); }
+function tutFinishPrimary(){
+  const begin=(TUT.fromPhase==="intro" && !(S&&S.completed));
+  tutClose();
+  if(begin){ ensureAudio(); startRun(); }
+}
+function tutClose(){ TUT.open=false; hideScrim("tutGuide"); tutClearSpot(); restoreFocus(); }
+function tutSkip(){ tls.set(TUT_SKIP_KEY,"1"); tutClose(); }
+
+/* overlay plumbing: ESC, focus trap, focus restore */
+function showScrim(id){ const s=$(id); if(!s) return; s.classList.add("show"); s.setAttribute("aria-hidden","false"); document.addEventListener("keydown",tutKey,true); }
+function hideScrim(id){ const s=$(id); if(!s) return; s.classList.remove("show"); s.setAttribute("aria-hidden","true"); if(!tutAnyOpen()) document.removeEventListener("keydown",tutKey,true); }
+function tutAnyOpen(){ return ["tutFirstScrim","howtoScrim","tutGuide","lbScrim","profileScrim","nudgeScrim"].some(id=>$(id)&&$(id).classList.contains("show")); }
+function tutTopScrim(){ return ["tutGuide","profileScrim","nudgeScrim","lbScrim","howtoScrim","tutFirstScrim"].map(id=>$(id)).find(s=>s&&s.classList.contains("show")); }
+function restoreFocus(){ const el=TUT.lastFocus; TUT.lastFocus=null; if(el&&el.focus){ try{el.focus();}catch(e){} } }
+function tutKey(e){
+  if(e.key==="Escape"){ e.preventDefault();
+    if($("tutGuide").classList.contains("show")) tutSkip();
+    else if($("nudgeScrim").classList.contains("show")) nudgeLater();
+    else if($("profileScrim").classList.contains("show")) closeProfile();
+    else if($("lbScrim").classList.contains("show")) closeLeaderboard();
+    else if($("howtoScrim").classList.contains("show")){ hideScrim("howtoScrim"); restoreFocus(); }
+    else if($("tutFirstScrim").classList.contains("show")){ tls.set(TUT_SKIP_KEY,"1"); hideScrim("tutFirstScrim"); restoreFocus(); }
+    return;
+  }
+  if(e.key==="Tab"){
+    const open=tutTopScrim(); if(!open) return;
+    const f=open.querySelectorAll('button:not([disabled]), input, [tabindex="0"]'); if(!f.length) return;
+    const first=f[0], last=f[f.length-1];
+    if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+  }
+}
+
+/* entry points */
+function maybeFirstTimePrompt(){
+  if(tls.get(TUT_DONE_KEY) || tls.get(TUT_SKIP_KEY)) return;
+  TUT.lastFocus=document.activeElement;
+  showScrim("tutFirstScrim");
+  setTimeout(()=>{ const b=$("ftStart"); if(b) b.focus(); },60);
+}
+function openHowTo(){
+  TUT.lastFocus=document.activeElement;
+  const cb=$("htNoTips"); if(cb) cb.checked=!!tls.get(TUT_SKIP_KEY);
+  showScrim("howtoScrim");
+  setTimeout(()=>{ const b=$("htStart"); if(b) b.focus(); },40);
+}
+function closeHowTo(){ hideScrim("howtoScrim"); restoreFocus(); }
+
+/* ============================================================= *
+ *  LEADERBOARD
+ *  `leaderboardService` is the seam between the UI and the backend.
+ *  Today it is backed by localStorage (this device only). To go global,
+ *  swap the internals of the methods marked `BACKEND:` for real network
+ *  calls (Supabase / Firebase / custom) — the UI only ever calls the
+ *  public methods below, so nothing else has to change.
+ *
+ *  HARD FAIRNESS RULE: only the OFFICIAL completed run submits here.
+ *  - The tutorial is a self-contained overlay that never reaches
+ *    showResult(), so it can never call submitOfficial().
+ *  - If a "Replay Today's Seed — practice" mode is ever re-added, it must
+ *    set a practice flag and submitOfficialToLeaderboard() must skip it.
+ * ============================================================= */
+const LB_KEY="vaulture_v1_leaderboard";
+let JUST_FINISHED=false; // true only on the turn a run actually finishes (→ auto-open once)
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+/* ============================================================= *
+ *  PROFILE / IDENTITY
+ *  `profileService` is the seam between the profile UI and real auth.
+ *
+ *  RIGHT NOW: local-only. It stores a display name + a "guest|local"
+ *  status in localStorage on THIS DEVICE. Nothing here is real
+ *  authentication — `createLocalProfile()` just names the player and
+ *  `signIn()` is a placeholder that reports "no backend yet".
+ *
+ *  LATER (real backend): replace the bodies marked `BACKEND:` with
+ *  Supabase / Firebase / custom calls. Sign-in should populate
+ *  {status:"signed_in", email, pid} from the provider. The UI only ever
+ *  calls the public methods below, so the screens won't have to change.
+ *
+ *  Identity is OWNED here; the leaderboard delegates to it, so a player's
+ *  display name is identical everywhere (profile + leaderboard entries).
+ *  IMPORTANT: profile/account state is fully independent of the official
+ *  daily run. Signing in/out or renaming never touches the saved run
+ *  (vaulture_v1_state) or filed scores, so it cannot reset the one-run-a-day
+ *  lock or create a duplicate official submission.
+ * ============================================================= */
+const PROFILE_KEY="vaulture_v1_profile";
+const profileService=(function(){
+  function read(){ try{ return JSON.parse(localStorage.getItem(PROFILE_KEY))||{}; }catch(e){ return {}; } }
+  function write(o){ try{ localStorage.setItem(PROFILE_KEY,JSON.stringify(o)); }catch(e){} }
+  function store(){
+    const o=read();
+    if(!o.pid) o.pid="dev-"+Math.random().toString(36).slice(2,10);   // BACKEND: provider user id
+    if(!o.status) o.status="guest";                                    // "guest" | "local" | "signed_in"
+    if(o.name===undefined){
+      // one-time migration: adopt a name set by the old leaderboard-owned identity
+      try{ const lb=JSON.parse(localStorage.getItem(LB_KEY))||{}; if(lb.name && lb.name!=="YOU"){ o.name=lb.name; o.status="local"; } }catch(e){}
+    }
+    return o;
+  }
+  function validateName(n){
+    const t=String(n||"").replace(/\s+/g," ").trim();   // collapse whitespace, reject empty/whitespace-only
+    if(!t) return {ok:false, reason:"Enter a display name."};
+    return {ok:true, value:t.slice(0,14)};              // reasonable length limit
+  }
+  return {
+    validateName,
+    getPlayerId(){ const o=store(); write(o); return o.pid; },         // BACKEND: authenticated uid
+    getStatus(){ return store().status; },
+    isGuest(){ return store().status==="guest"; },
+    isSignedIn(){ return store().status==="signed_in"; },
+    hasProfile(){ const o=store(); return o.status!=="guest" && !!o.name; },
+    getName(){ const o=store(); return o.name || "Guest"; },           // display fallback for un-named guests
+    getEmail(){ return store().email||""; },
+    setName(n){                                                        // BACKEND: PATCH /profile {name}
+      const v=validateName(n); if(!v.ok) return v;
+      const o=store(); o.name=v.value; if(o.status==="guest") o.status="local"; write(o);
+      return {ok:true, value:v.value};
+    },
+    // LOCAL-ONLY: names the player on this device. NOT a real account.
+    createLocalProfile(n){ return this.setName(n); },                  // BACKEND: POST /signup
+    // Placeholder for real cloud sign-in. No backend yet → not available.
+    signIn(){ return {ok:false, reason:"cloud-unavailable"}; },        // BACKEND: provider sign-in flow
+    // Clears LOCAL identity only — never touches the official run or filed scores.
+    signOut(){ const o=store(); delete o.name; delete o.email; o.status="guest"; write(o); }, // BACKEND: provider sign-out
+    // Gentle post-run nudge: show only to guests who haven't dismissed it before.
+    shouldNudge(){ const o=store(); return o.status==="guest" && !o.nudgeDismissed; },
+    dismissNudge(){ const o=store(); o.nudgeDismissed=true; write(o); },
+  };
+})();
+
+const leaderboardService=(function(){
+  function read(){ try{ return JSON.parse(localStorage.getItem(LB_KEY))||{}; }catch(e){ return {}; } }
+  function write(o){ try{ localStorage.setItem(LB_KEY,JSON.stringify(o)); }catch(e){} }
+  function store(){ const o=read(); if(!o.days) o.days={}; return o; }
+  return {
+    // identity is owned by profileService now; delegate so the name is the same
+    // everywhere (profile page + leaderboard entries).
+    getPlayerId(){ return profileService.getPlayerId(); },           // BACKEND: authenticated user id
+    getName(){ return profileService.getName(); },
+    setName(n){ return profileService.setName(n); },                 // BACKEND: PATCH profile
+    // submit the OFFICIAL run for a day; idempotent — the first filed score for a
+    // date wins and is never overwritten (protects the original official score).
+    submitOfficial(entry){                                           // BACKEND: POST /leaderboard {date,entry}
+      const o=store();
+      if(o.days[entry.date]) return o.days[entry.date];              // already filed today → no duplicate
+      entry.pid=profileService.getPlayerId();
+      entry.name=entry.name||profileService.getName();
+      o.days[entry.date]=entry; write(o);
+      return entry;
+    },
+    getToday(){ const d=read().days||{}; return d[DAY.dateStr]||null; }, // BACKEND: GET /leaderboard/today
+    getBoard(){                                                       // BACKEND: GET /leaderboard (sorted server-side)
+      const days=read().days||{};
+      return Object.values(days).sort((a,b)=>
+        b.score-a.score || (b.locks||0)-(a.locks||0) || (a.ts||0)-(b.ts||0));
+    },
+    // derived profile stats — read-only view over the OFFICIAL filed runs only.
+    // (Practice/tutorial never reach showResult(), so they're never in here.)
+    getStats(){
+      const board=this.getBoard();                                   // sorted by score desc
+      const runs=board.length;
+      const best=runs?board[0]:null;
+      const clears=board.filter(e=>e.cleared).length;
+      // current streak: consecutive UTC days with a filed run, counting back from
+      // today (or yesterday, so the streak isn't 0 before today's run is filed).
+      const have=new Set(board.map(e=>e.day));
+      let streak=0, d=DAY.dayNumber;
+      if(!have.has(d)) d-=1;
+      while(have.has(d)){ streak++; d--; }
+      return {runs, best, clears, streak};
+    },
+  };
+})();
+
+// Build + file the official entry. Guarded so only a completed official run counts.
+function submitOfficialToLeaderboard(){
+  if(!S || !S.completed) return;            // not an official, completed run → never submit
+  const d=resultData();
+  const locks=d.cleared ? JOBS.length : Math.max(0,(S.bustedOn||1)-1);
+  leaderboardService.submitOfficial({
+    date:DAY.dateStr, day:DAY.dayNumber, name:profileService.getName(),
+    score:d.score, title:d.rank, cleared:d.cleared,
+    locks, bustedOn:S.bustedOn||null, sig:d.sigText, ts:Date.now(),
+  });
+}
+
+function renderLeaderboard(){
+  const body=$("lbBody");
+  const board=leaderboardService.getBoard();
+  const today=leaderboardService.getToday();
+  const name=leaderboardService.getName();
+  let html="";
+  const guest=profileService.isGuest();
+  html+=`<div class="lb-note">Local board — your official daily runs on this device. Global ranks unlock with accounts.</div>`;
+  html+=`<div class="lb-me"><span class="lb-melbl">Player</span>`+
+        `<span class="lb-name">${escapeHtml(name)}</span>`+
+        (guest
+          ? `<button class="lb-cta" id="lbProfile" type="button">+ Create profile</button>`
+          : `<button class="lb-edit" id="lbEdit" type="button" title="Edit name" aria-label="Edit name">✎</button>`)+
+        `</div>`;
+  if(guest){
+    html+=`<div class="lb-note" style="margin-top:-6px">Create a profile to name your result on the leaderboard. Optional — your score is already saved on this device.</div>`;
+  }
+  if(!board.length){
+    html+=`<div class="lb-empty">No runs filed yet.<br>Finish today's official run to post your score.</div>`;
+  }else{
+    html+=`<div class="lb-head"><span>#</span><span>Day</span><span>Score</span><span>Result</span></div>`;
+    board.forEach((e,i)=>{
+      const isToday=e.date===DAY.dateStr;
+      const status=e.cleared ? `✓ ${JOBS.length}/${JOBS.length}` : `✕ L${e.bustedOn||(e.locks+1)}`;
+      html+=`<div class="lb-row${isToday?" me":""}">`+
+        `<span class="lb-rank num">${i+1}</span>`+
+        `<span class="lb-day">Day ${e.day}${isToday?' <em>· today</em>':""}</span>`+
+        `<span class="lb-score num">$${fmt(e.score)}</span>`+
+        `<span class="lb-res ${e.cleared?"ok":"bust"}">${status}</span>`+
+        `</div>`;
+    });
+  }
+  html+= today
+    ? `<div class="lb-sub">Today's filed score: <b>$${fmt(today.score)}</b> · ${escapeHtml(today.title)}</div>`
+    : `<div class="lb-sub dim">Today's run isn't filed yet — finish it to post your score.</div>`;
+  body.innerHTML=html;
+  const eb=$("lbEdit"); if(eb) eb.onclick=()=>promptDisplayName(renderLeaderboard);
+  const pb=$("lbProfile"); if(pb) pb.onclick=openProfile;   // gentle path from board → profile
+}
+// Shared display-name prompt — validates via profileService, then re-renders.
+function promptDisplayName(after){
+  const cur=profileService.getName();
+  const v=window.prompt("Display name (max 14 chars):", profileService.isGuest()?"":cur);
+  if(v===null) return;                       // cancelled
+  const r=profileService.setName(v);
+  if(!r.ok){ toast(r.reason||"Enter a valid name"); return; }
+  toast("Saved as "+r.value);
+  syncProfileIcon();                          // keep the header 👤 in sync everywhere
+  if(after) after();
+}
+function openLeaderboard(){
+  TUT.lastFocus=document.activeElement;      // shared focus stash (restored on close)
+  renderLeaderboard();
+  showScrim("lbScrim");
+  setTimeout(()=>{ const b=$("lbClose"); if(b) b.focus(); },40);
+}
+function closeLeaderboard(){ hideScrim("lbScrim"); restoreFocus(); }
+
+/* ============================================================= *
+ *  PROFILE PAGE  (optional — guests never need it to play)
+ * ============================================================= */
+function renderProfile(){
+  const body=$("pfBody");
+  const guest=profileService.isGuest();
+  const name=profileService.getName();
+  const email=profileService.getEmail();
+  const st=leaderboardService.getStats();
+  let html="";
+
+  // --- account status card ---
+  html+=`<div class="pf-card">`;
+  if(guest){
+    html+=`<div class="pf-status"><span class="pf-badge">Guest</span></div>`+
+          `<div class="pf-sub">You're playing as a guest. Your daily runs and share card work fully — a profile just lets you <b>name your scores</b> on the leaderboard.</div>`+
+          `<div class="pf-actions">`+
+            `<button class="btn" id="pfCreate" type="button">Create Profile</button>`+
+            `<button class="btn ghost" id="pfSignIn" type="button">Sign In</button>`+
+          `</div>`;
+  }else{
+    const lbl=profileService.isSignedIn()?"Signed In":"Local Profile";
+    html+=`<div class="pf-status"><span class="pf-badge on">${lbl}</span></div>`+
+          `<div class="pf-name">${escapeHtml(name)}</div>`+
+          (email?`<div class="pf-email">${escapeHtml(email)}</div>`:"")+
+          `<div class="pf-sub">Saved on this device. This is the name shown on your leaderboard entries.</div>`+
+          `<div class="pf-actions">`+
+            `<button class="btn ghost" id="pfEdit" type="button">Edit Name</button>`+
+            `<button class="btn ghost" id="pfSignOut" type="button">Sign Out</button>`+
+          `</div>`;
+  }
+  html+=`</div>`;
+
+  // --- daily stats (derived from official runs only) ---
+  const best=st.best;
+  html+=`<div class="pf-h">Your Stats</div>`;
+  html+=`<div class="pf-grid">`+
+    `<div class="pf-stat"><div class="v">${st.runs}</div><div class="l">Official Runs</div></div>`+
+    `<div class="pf-stat"><div class="v gold">${best?("$"+fmt(best.score)):"—"}</div><div class="l">Best Score</div></div>`+
+    `<div class="pf-stat"><div class="v">${st.streak}</div><div class="l">Day Streak</div></div>`+
+    `<div class="pf-stat"><div class="v">${st.clears}<span style="font-size:13px;color:var(--faint)">/${st.runs}</span></div><div class="l">Vaults Cleared</div></div>`+
+    `<div class="pf-stat dim" style="grid-column:1/-1"><div class="v">Global rank · soon</div><div class="l">Unlocks with cloud accounts</div></div>`+
+  `</div>`;
+
+  // --- score history (official, newest first) ---
+  html+=`<div class="pf-h">Recent Runs</div>`;
+  const hist=leaderboardService.getBoard().slice().sort((a,b)=>b.day-a.day).slice(0,10);
+  if(!hist.length){
+    html+=`<div class="pf-empty">No official runs yet.<br>Finish today's run to start your history.</div>`;
+  }else{
+    html+=`<div class="pf-hist">`;
+    hist.forEach(e=>{
+      const isToday=e.date===DAY.dateStr;
+      const status=e.cleared?`✓ ${JOBS.length}/${JOBS.length}`:`✕ L${e.bustedOn||(e.locks+1)}`;
+      html+=`<div class="pf-hrow${isToday?" me":""}">`+
+        `<span class="d">Day ${e.day}${isToday?' <em>· today</em>':` <em>· ${escapeHtml(e.date)}</em>`}</span>`+
+        `<span class="s num">$${fmt(e.score)}</span>`+
+        `<span class="r ${e.cleared?"ok":"bust"}">${status}</span>`+
+        `</div>`;
+    });
+    html+=`</div>`;
+  }
+
+  html+=`<div class="pf-note">Only completed <b>official</b> daily runs appear here. Practice and tutorial runs are never saved. Profiles are local to this device until cloud accounts ship.</div>`;
+  body.innerHTML=html;
+
+  // wire the card buttons
+  const c=$("pfCreate"); if(c) c.onclick=()=>promptDisplayName(renderProfile);
+  const e=$("pfEdit");   if(e) e.onclick=()=>promptDisplayName(renderProfile);
+  const si=$("pfSignIn");if(si) si.onclick=pfSignIn;
+  const so=$("pfSignOut");if(so) so.onclick=pfSignOut;
+}
+function pfSignIn(){
+  // No backend yet — be honest rather than fake a real account.
+  const r=profileService.signIn();
+  if(!r.ok) toast("Cloud sign-in is coming. For now, create a local profile.");
+}
+function pfSignOut(){
+  if(!window.confirm("Sign out of your local profile? Your saved scores stay on this device.")) return;
+  profileService.signOut();                  // clears name only — official runs untouched
+  syncProfileIcon();
+  renderProfile();
+}
+function openProfile(){
+  ["lbScrim","nudgeScrim"].forEach(id=>{ if($(id).classList.contains("show")) hideScrim(id); }); // swap → profile cleanly
+  TUT.lastFocus=TUT.lastFocus||document.activeElement;
+  renderProfile();
+  showScrim("profileScrim");
+  setTimeout(()=>{ const b=$("pfClose"); if(b) b.focus(); },40);
+}
+function closeProfile(){ hideScrim("profileScrim"); restoreFocus(); }
+
+/* Gentle post-run prompt — guests only, dismissible, never blocks play. */
+function afterRunPrompt(){
+  if(profileService.shouldNudge()) openProfileNudge();   // guest → invite to name their score
+  else openLeaderboard();                                // already has a profile → show the board
+}
+function openProfileNudge(){
+  TUT.lastFocus=document.activeElement;
+  showScrim("nudgeScrim");
+  setTimeout(()=>{ const b=$("nudgeCreate"); if(b) b.focus(); },40);
+}
+function closeProfileNudge(){ hideScrim("nudgeScrim"); restoreFocus(); }
+function nudgeCreate(){
+  profileService.dismissNudge();                         // engaged → don't auto-nudge again
+  hideScrim("nudgeScrim");
+  promptDisplayName(()=>{ syncProfileIcon(); openLeaderboard(); }); // name set → show where you landed
+}
+function nudgeLater(){
+  profileService.dismissNudge();                         // respect the decline; header 👤 stays available
+  closeProfileNudge();
+}
+
+/* ============================================================= *
+ *  BOOT
+ * ============================================================= */
+function bindOnce(){
+  $("startBtn").onclick=()=>{ensureAudio();startRun();};
+  $("playBtn").onclick=onPlay;
+  $("discardBtn").onclick=onDiscard;
+  $("rerollBtn").onclick=reroll;
+  $("nextBtn").onclick=nextJob;
+  $("shareBtn").onclick=onShare;
+  $("copyBtn").onclick=onCopy;
+  $("saveBtn").onclick=onSave;
+  $("mute").onclick=()=>setMute(!muted);
+  // tutorial / how-to wiring (practice-only; never touches the official run)
+  $("help").onclick=openHowTo;
+  $("introHowto").onclick=openHowTo;
+  $("htStart").onclick=openGuidedTutorial;
+  $("htClose").onclick=closeHowTo;
+  $("htNoTips").onchange=e=>{ if(e.target.checked) tls.set(TUT_SKIP_KEY,"1"); else tls.del(TUT_SKIP_KEY); };
+  $("ftStart").onclick=()=>{ hideScrim("tutFirstScrim"); openGuidedTutorial(); };
+  $("ftSkip").onclick=()=>{ tls.set(TUT_SKIP_KEY,"1"); hideScrim("tutFirstScrim"); restoreFocus(); };
+  $("tutPlay").onclick=tutCommit;
+  // leaderboard wiring (local; submission stays official-only)
+  $("introLb").onclick=openLeaderboard;
+  $("lbBtn").onclick=openLeaderboard;
+  $("lbClose").onclick=closeLeaderboard;
+  // profile wiring (optional; identity only — never gates play)
+  $("profile").onclick=openProfile;          // small header icon (game-first; no pre-play signup)
+  $("pfClose").onclick=closeProfile;
+  $("nudgeCreate").onclick=nudgeCreate;       // gentle post-run prompt (guests only)
+  $("nudgeLater").onclick=nudgeLater;
+  syncProfileIcon();
+  $("introday").textContent=`DAY ${DAY.dayNumber} · ${DAY.dateStr}`;
+  $("mute").textContent=muted?"🔇":"🔊";
+}
+
+function boot(){
+  bindOnce();
+  try{OLD_KEYS.forEach(k=>localStorage.removeItem(k));}catch(e){} // drop obsolete pre-rebrand prototype keys
+  const saved=load();
+  if(saved && saved.day===DAY.dayNumber){
+    S=saved;
+    if(S.completed){ showResult(); return; }            // locked: show today's result
+    // resume in-progress run
+    if(S.phase==="shop"){ show("shop"); renderShop(); return; }
+    if(S.phase==="job"){ show("game"); renderHUD(); renderHand(); $("playBtn").disabled=S.selected.length===0; $("discardBtn").disabled=S.selected.length===0||S.discardsLeft<=0; return; }
+    // intro/other → restart fresh for today
+    S=freshState(); save(); show("intro"); maybeFirstTimePrompt(); return;
+  }
+  // new day or first visit
+  S=freshState(); save(); show("intro"); maybeFirstTimePrompt();
+}
+// draw share card with the nice font once it loads (if we're on result already)
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(S&&S.completed&&document.getElementById("result").classList.contains("active")){ const d=resultData();drawShareCard(d);$("cardimg").src=$("sharecanvas").toDataURL("image/png");$("sharecanvas").toBlob(b=>shareBlob=b,"image/png"); } });
+boot();
+</script>
+</body>
+</html>
