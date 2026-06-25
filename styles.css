@@ -133,7 +133,9 @@ body::before{
 #mute:active{transform:translate(2px,2px); box-shadow:none;}
 #mute svg{width:20px; height:20px;}
 
-#toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); z-index:60;
+/* float above the bottom action bar (Commit/Burn, shop's New Stock/Next Lock, share row)
+   + the iOS safe area, so toasts like "… joined the crew" never sit on top of the buttons */
+#toast{position:fixed; left:50%; bottom:max(92px, calc(env(safe-area-inset-bottom) + 72px)); transform:translateX(-50%) translateY(20px); z-index:60;
   background:var(--ink); color:var(--paper); font:700 12px var(--mono); letter-spacing:.06em; text-transform:uppercase;
   padding:11px 18px; border:2px solid var(--ink); border-radius:2px; opacity:0;
   transition:all .28s ease; box-shadow:4px 4px 0 var(--red2); pointer-events:none; max-width:84vw; text-align:center;}

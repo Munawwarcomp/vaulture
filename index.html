@@ -14,14 +14,15 @@
 <meta property="og:title" content="Vaulture" />
 <meta property="og:site_name" content="Vaulture" />
 <meta property="og:description" content="Crack the same daily vault as everyone else. Build your crew, chase the highest take, and share your run." />
-<meta property="og:image" content="https://munawwarcomp.github.io/vaulture/og.png" />
+<meta property="og:image" content="https://munawwarcomp.github.io/vaulture/og.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:image:alt" content="Vaulture — a daily shared-seed vault-cracking card game" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Vaulture" />
 <meta name="twitter:description" content="Crack the same daily vault as everyone else. Build your crew, chase the highest take, and share your run." />
-<meta name="twitter:image" content="https://munawwarcomp.github.io/vaulture/og.png" />
+<meta name="twitter:image" content="https://munawwarcomp.github.io/vaulture/og.jpg" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
@@ -756,6 +757,9 @@ async function animatePlay(b){
   const fx=$("scorefx"),chipsEl=$("fxchips"),multEl=$("fxmult"),totEl=$("fxtotal"),nameEl=$("fxname");
   $("stageinner").style.display="none";
   fx.style.display="block"; chipsEl.textContent="0"; chipsEl.style.color="var(--ink)";
+  // clear last play's reveal text too — leaving it (even at opacity:0) reserves its full
+  // height, so the tape balloons with a big empty gap under the loot during the count-up.
+  multEl.textContent=""; totEl.textContent=""; nameEl.textContent="";
   multEl.style.opacity=0; totEl.style.opacity=0; nameEl.style.opacity=0;
   let chips=0;
   for(let i=0;i<b.steps.length;i++){
