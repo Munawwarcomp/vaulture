@@ -552,24 +552,39 @@ function cardInnerHTML(c){
 
 function renderPlay(){ renderHand(); renderSlots(); renderPreview(); }
 
+// RECONCILING render: reuse existing card elements instead of tearing the hand
+// down every interaction. Rebuilding innerHTML recreated each card's <img> portrait,
+// which made the whole card blink (blank → repaint) on mobile every time you picked
+// one up. Now only the cards that actually entered/left the hand touch the DOM, and
+// pick/unpick just toggles a class — no <img> is recreated, so no flicker.
 function renderHand(){
-  const h=$("hand"); h.innerHTML="";
-  for(const c of S.hand){
-    if(S.selected.includes(c.uid)) continue;        // staged cards live in the slots
-    const col=SYMBOLS[c.sym].color;
-    const d=document.createElement("div");
-    d.className="card hand-card"+(pending===c.uid?" picked":"");
-    d.style.setProperty("--cc",col);
-    d.dataset.uid=c.uid; d.tabIndex=0; d.draggable=true;
-    d.setAttribute("role","button");
+  const h=$("hand");
+  const want=S.hand.filter(c=>!S.selected.includes(c.uid));   // staged cards live in the slots
+  const wantUids=new Set(want.map(c=>String(c.uid)));
+  for(const el of [...h.querySelectorAll(".hand-card")])       // drop cards that left the hand
+    if(!wantUids.has(el.dataset.uid)) el.remove();
+  let prev=null;
+  for(const c of want){
+    let d=h.querySelector(`.hand-card[data-uid="${c.uid}"]`);
+    if(!d){                                                    // build a card the first time we see it
+      const col=SYMBOLS[c.sym].color;
+      d=document.createElement("div");
+      d.className="card hand-card";
+      d.style.setProperty("--cc",col);
+      d.dataset.uid=c.uid; d.tabIndex=0; d.draggable=true;
+      d.setAttribute("role","button");
+      d.setAttribute("aria-label",`${symLabel(c.sym)}, ${SYMBOLS[c.sym].role}, value ${c.val}`);
+      d.innerHTML=cardInnerHTML(c)+`<div class="pickmark">${ART.icon("check")}</div>`;
+      d.onclick=()=>clickHandCard(c.uid);
+      d.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();clickHandCard(c.uid);}};
+      d.ondragstart=(e)=>{ if(animating){e.preventDefault();return;} pending=c.uid; renderSlots(); renderPreview();
+        try{e.dataTransfer.setData("text/plain",String(c.uid));e.dataTransfer.effectAllowed="move";}catch(_){}};
+    }
+    d.classList.toggle("picked",pending===c.uid);              // transient state only — no rebuild
     d.setAttribute("aria-pressed",pending===c.uid?"true":"false");
-    d.setAttribute("aria-label",`${symLabel(c.sym)}, ${SYMBOLS[c.sym].role}, value ${c.val}`);
-    d.innerHTML=cardInnerHTML(c)+`<div class="pickmark">${ART.icon("check")}</div>`;
-    d.onclick=()=>clickHandCard(c.uid);
-    d.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();clickHandCard(c.uid);}};
-    d.ondragstart=(e)=>{ if(animating){e.preventDefault();return;} pending=c.uid; renderSlots(); renderPreview();
-      try{e.dataTransfer.setData("text/plain",String(c.uid));e.dataTransfer.effectAllowed="move";}catch(_){}}; 
-    h.appendChild(d);
+    if(prev){ if(prev.nextElementSibling!==d) h.insertBefore(d,prev.nextElementSibling); }
+    else if(h.firstElementChild!==d){ h.insertBefore(d,h.firstElementChild); }
+    prev=d;
   }
   // dropping a held card back onto the hand returns it
   h.ondragover=(e)=>{ if(pending!=null) e.preventDefault(); };
@@ -577,32 +592,46 @@ function renderHand(){
   $("selcount").textContent=S.selected.length;
 }
 
+// RECONCILING render (same rationale as renderHand): the five slot shells + their
+// handlers are built once; afterwards we only re-skin them. A slot's card markup is
+// rebuilt ONLY when its occupant actually changes, so staged cards (and their <img>)
+// don't blink when you pick up another card or toggle slot availability.
 function renderSlots(){
-  const wrap=$("slots"); wrap.innerHTML="";
+  const wrap=$("slots");
   wrap.classList.toggle("valid",S.selected.length>=1);
-  for(let i=0;i<5;i++){
-    const uid=S.selected[i], filled=uid!=null;
-    const slot=document.createElement("div");
-    slot.className="slot"+(filled?" filled":"")+((pending!=null&&!filled)?" avail":"");
-    slot.tabIndex=0; slot.dataset.i=i;
-    slot.setAttribute("role","button");
-    slot.setAttribute("aria-label",filled?`Slot ${i+1}, occupied — activate to return card to hand`:`Slot ${i+1}, empty${pending!=null?" — activate to place held card":""}`);
-    if(filled){
-      const c=cardByUid(uid), col=SYMBOLS[c.sym].color;
-      slot.innerHTML=`<span class="slotno">${String(i+1).padStart(2,"0")}</span><div class="card slot-card" style="--cc:${col}">${cardInnerHTML(c)}</div>`;
-    } else {
-      slot.innerHTML=`<span class="slotno">${String(i+1).padStart(2,"0")}</span>
-        <span class="brk tl"></span><span class="brk tr"></span><span class="brk bl"></span><span class="brk br"></span>
-        <span class="slotsil"></span>`;
+  if(wrap.children.length!==5){                  // build the five slot shells once
+    wrap.innerHTML="";
+    for(let i=0;i<5;i++){
+      const slot=document.createElement("div");
+      slot.tabIndex=0; slot.dataset.i=i; slot.dataset.uid="__none";   // sentinel forces first paint
+      slot.setAttribute("role","button");
+      slot.onclick=()=>clickSlot(i);
+      slot.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();clickSlot(i);}};
+      slot.ondragover=(e)=>{ if(pending!=null) e.preventDefault(); };
+      slot.ondrop=(e)=>{ e.preventDefault(); if(pending==null) return;
+        if(S.selected[i]!=null){ toast("🔥 Burn to remove staged crew"); return; }   // burn-only: can't displace staged crew
+        if(!S.selected.includes(pending)) S.selected.push(pending);
+        const idx=S.selected.length-1; pending=null; renderPlay(); landAnim(idx); };
+      wrap.appendChild(slot);
     }
-    slot.onclick=()=>clickSlot(i);
-    slot.onkeydown=(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();clickSlot(i);}};
-    slot.ondragover=(e)=>{ if(pending!=null) e.preventDefault(); };
-    slot.ondrop=(e)=>{ e.preventDefault(); if(pending==null) return;
-      if(filled){ toast("🔥 Burn to remove staged crew"); return; }   // burn-only: can't displace staged crew
-      if(!S.selected.includes(pending)) S.selected.push(pending); pending=null; landAnim(S.selected.length-1);
-      renderPlay(); };
-    wrap.appendChild(slot);
+  }
+  for(let i=0;i<5;i++){
+    const slot=wrap.children[i];
+    const uid=S.selected[i], filled=uid!=null;
+    slot.className="slot"+(filled?" filled":"")+((pending!=null&&!filled)?" avail":"");
+    slot.setAttribute("aria-label",filled?`Slot ${i+1}, occupied — activate to return card to hand`:`Slot ${i+1}, empty${pending!=null?" — activate to place held card":""}`);
+    const cur=slot.dataset.uid, next=filled?String(uid):"";
+    if(cur!==next){                              // occupant changed → repaint just this slot
+      slot.dataset.uid=next;
+      if(filled){
+        const c=cardByUid(uid), col=SYMBOLS[c.sym].color;
+        slot.innerHTML=`<span class="slotno">${String(i+1).padStart(2,"0")}</span><div class="card slot-card" style="--cc:${col}">${cardInnerHTML(c)}</div>`;
+      } else {
+        slot.innerHTML=`<span class="slotno">${String(i+1).padStart(2,"0")}</span>
+          <span class="brk tl"></span><span class="brk tr"></span><span class="brk bl"></span><span class="brk br"></span>
+          <span class="slotsil"></span>`;
+      }
+    }
   }
 }
 

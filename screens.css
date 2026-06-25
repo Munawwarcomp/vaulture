@@ -106,13 +106,19 @@
   text-transform:uppercase; background:var(--paper3); border-top:1.5px solid var(--line); position:relative; z-index:1;}
 .vstate.done{color:var(--green2);}
 
-/* evidence-tag gadget strip (mobile) */
-#mkit{display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
-#mkit .gchip{display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:0 9px 0 6px;
+/* evidence-tag gadget strip (mobile) — ONE row that scrolls sideways. Wrapping it
+   let a full kit balloon to 3 rows (~100px), which crushed the play stage and made
+   the overflowing slots/hint bleed on top of these chips. A single capped row keeps
+   the gadgets tidy, never overlapping, and hands that height back to the card slots. */
+#mkit{display:flex; flex-wrap:nowrap; gap:6px; align-items:center; flex:0 0 auto;
+  overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+#mkit::-webkit-scrollbar{display:none;}
+#mkit .gchip{flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:0 9px 0 6px;
   background:var(--paper); border:1.5px solid var(--ink); cursor:pointer; box-shadow:1.5px 1.5px 0 var(--ink);
   font:700 9px var(--mono); color:var(--ink); text-transform:uppercase; letter-spacing:.06em;}
 #mkit .gchip:active{transform:translate(1.5px,1.5px); box-shadow:none;}
 #mkit .gchip svg{width:18px; height:18px;}
+#mkit .gchip .gn{white-space:nowrap;}
 #mkit:empty{display:none;}
 
 .sidextra{display:none;}
@@ -402,47 +408,26 @@
   #shop.screen.active{max-width:1040px; margin:0 auto;}
   .offers{display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; align-content:start;}
 }
+/* Short viewports: keep the commit-reveal numerals and the intro logo from
+   overflowing. These are display-only type tweaks, NOT play-screen layout. */
 @media (max-height:700px){
-  .card{width:66px; height:99px;}
-  .card .corner .cv{font-size:15px;} .card .corner .pip{width:9px; height:9px;}
-  .card .dossier .alias{font-size:9px;} .card .dossier .role{font-size:6.5px;}
-  .slot{max-width:72px;}
   #fxchips{font-size:34px;} #fxtotal{font-size:46px;} .logo{font-size:52px;}
 }
 
-/* ---- SHORT PHONE SCREENS: compress HUD + hand so the stage keeps room for
-        its card slots. Mobile-column only (phones are always <880px wide), so
-        the desktop grid layout above is never touched. Mobile browser chrome
-        eats ~100px of height, so these tiers fire on most real phones. ---- */
-@media (max-width:879px) and (max-height:780px){
-  #hud{gap:6px;}
-  .casebar .file{padding:5px 12px;} .casebar .file .jn{font-size:16px;}
-  .casebar .bank{padding:5px 12px;} .casebar .bank .cash{font-size:15px;}
-  .vrow{padding:4px 12px;}
-  .scorerow{padding:5px 12px 4px;}
-  .scorewrap .cur{font-size:18px;} .score{font-size:32px;}
-  .plays-stat{padding:4px 12px;} .plays-stat .pv{font-size:20px;}
-  .bar{height:10px;}
-  .vstate{padding:4px 12px; font-size:10px;}
-  #mkit .gchip{min-height:26px;}
-  #stage{margin:4px 0;}
-  #stageinner{gap:7px; padding:0 18px;}
-  #hint{display:none !important;}      /* coaching tip is the most droppable element when space is tight ( !important beats the inline display:block startJob sets ) */
-  #controls{gap:6px;}
-  .hand{min-height:92px; padding-top:12px;}
-}
-@media (max-width:879px) and (max-height:640px){
-  .casebar .file small{font-size:8px;}
-  .scorewrap .cur{font-size:16px;} .score{font-size:27px;}
-  #hud{gap:5px;}
-  .hand{min-height:78px; padding-top:8px; gap:5px;}
-  .card{width:58px; height:87px;}
-  .slot{max-width:60px;}
-  .actions .btn{padding-top:10px; padding-bottom:10px;}
-  /* last resort: if it still can't all fit, let the play screen scroll
-     rather than letting the receipt line overlap the hand */
-  #game.screen.active{overflow-y:auto; overflow-x:hidden;}
-  #stage{flex:0 0 auto; min-height:150px; margin:6px 0;}
+/* ---- PHONE PLAY SCREEN: SCROLL, DON'T SHRINK. ----
+   Instead of cramming the HUD, cards, and hand to force every iPhone onto one
+   fixed screen (which broke down on the common 812px height and in the band where
+   Safari's URL bar eats height — slots/receipt overlapped the hand and gadgets),
+   the play screen simply scrolls vertically. Cards and HUD keep their full size.
+   #stage grows to fill spare room when everything fits — so the slots stay nicely
+   centered on tall phones (iPhone 14 / Pro Max) — but never shrinks below its
+   slots (flex-shrink:0), so on shorter phones (SE, or any phone with the URL bar
+   showing) the screen scrolls gracefully instead of overlapping. Mobile-column
+   only (<880px); the desktop grid layout above is untouched. The header icons
+   (#mute/#help/#profile) and #toast live outside .screen, so they stay pinned. */
+@media (max-width:879px){
+  #game.screen.active{overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;}
+  #stage{flex:1 0 auto;}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001s !important;}
