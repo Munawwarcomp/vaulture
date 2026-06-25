@@ -132,6 +132,11 @@
     inset 0 0 0 1px rgba(22,55,74,.10),
     0 26px 58px -20px rgba(12,38,53,.55),
     0 10px 26px -10px rgba(12,38,53,.30);}
+/* ornate banknote frame: DESKTOP ONLY. On the phone column it re-rasterizes the
+   SVG border-image on every stage reflow (each card tap) and flashes, so it stays
+   hidden < 880px; the desktop grid keeps #stage height stable, so no flicker there.
+   Turned on in the desktop @media block below. */
+#vaultdeco{display:none;}
 #stageinner{position:relative; z-index:2; width:100%; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:11px; padding:0 30px;}
 #hint{text-align:center; color:var(--navy); font:400 13.5px/1.5 var(--body); padding:0 8px;
@@ -363,6 +368,8 @@
   }
   #hud{grid-area:side; gap:13px;}
   #stage{grid-area:stage; margin:0;}
+  #vaultdeco{display:block; position:absolute; inset:6px; pointer-events:none; z-index:1; opacity:.62;
+    border:54px solid transparent; border-image:var(--bankframe) 84 round;}
   #controls{grid-area:controls; width:100%; max-width:760px; justify-self:center;}
   .casebar{padding-right:0;}
   .score{font-size:52px;}

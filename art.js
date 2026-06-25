@@ -34,6 +34,7 @@ function guillocheSVG(){
 const root=document.documentElement.style;
 root.setProperty("--grain", grainSVG ? uri(grainSVG) : "none");
 root.setProperty("--guilloche", uri(guillocheSVG()));
+root.setProperty("--bankframe", uri(bankFrameSVG()));
 
 /* ============== helper: wrap an inner SVG body ============== */
 const svg = (vb, body, extra="") => `<svg viewBox="${vb}" ${extra} xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
