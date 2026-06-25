@@ -109,7 +109,6 @@
 
     <div id="stage">
       <div class="flash" id="flash"></div>
-      <div id="vaultdeco"></div>
       <div id="stageinner">
         <div id="hint">Pick a crew card, then drop it into a slot.<br><b>Matching crew chain into bigger multipliers.</b></div>
         <div class="slots" id="slots"></div>
@@ -1705,7 +1704,6 @@ function nudgeLater(){
 function paintArt(){
   // hero collage + intro seal motifs
   $("herobox").innerHTML=ART.heroCollage();
-  $("vaultdeco").innerHTML="";
   // crew strip seals
   $("crewstrip").innerHTML=SYMS.map(s=>`<span class="seal" style="--sc:${SYMBOLS[s].color}" title="${symLabel(s)} · ${SYMBOLS[s].role}"><span class="medal">${ART.crewSeal(s,SYMBOLS[s].color)}</span><span class="rname">${symLabel(s)}</span><span class="rrole">${SYMBOLS[s].role}</span></span>`).join("");
   // desktop legend
