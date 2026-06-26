@@ -65,6 +65,17 @@
 .finework{font:700 9px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--navy);
   text-align:center; margin-top:10px;}
 
+/* Homepage "About / What is Vaulture?" — SEO/AEO prose, reuses the case-file dossier look.
+   Lives inside #intro, so it inherits the desktop 560px max-width on .dossier. */
+.about{width:100%; margin:20px auto 2px;}
+.about .dossier{margin-top:0;}
+.about .abouttext{font:400 13.5px/1.66 var(--body); color:var(--char);}
+.about .abouttext h2{font:400 22px/1.12 var(--serif); color:var(--ink); margin:0 0 8px;}
+.about .abouttext h3{font:700 10px var(--mono); letter-spacing:.16em; text-transform:uppercase;
+  color:var(--navy); margin:15px 0 4px;}
+.about .abouttext p{margin:0 0 9px;}
+.about .abouttext p:last-child{margin-bottom:0;}
+
 /* ============================== GAME HUD ============================== */
 #game{padding-top:max(12px, env(safe-area-inset-top));}
 #hud{display:flex; flex-direction:column; gap:9px; flex:0 0 auto;}
