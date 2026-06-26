@@ -101,6 +101,7 @@
     <div class="introlinks">
       <button class="howto-link" id="introHowto" type="button">How to play</button>
       <button class="howto-link" id="introLb" type="button">🏆 Leaderboard</button>
+      <button class="howto-link" id="introCommunity" type="button">💬 Community</button>
     </div>
 
     <section class="about" id="about" aria-labelledby="aboutTitle">
@@ -318,6 +319,20 @@
     <div class="modal-actions">
       <button class="btn" id="nudgeCreate" type="button">Create Profile</button>
       <button class="btn ghost" id="nudgeLater" type="button">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+<!-- Community: links out to Discord + email. Pure UI/content — no account, gameplay, or score hooks. -->
+<div class="tut-scrim" id="communityScrim" role="dialog" aria-modal="true" aria-labelledby="communityTitle" aria-hidden="true">
+  <div class="modal-card" style="max-width:380px;text-align:center">
+    <h2 id="communityTitle">Vaulture <span class="kk">Community</span></h2>
+    <p class="ft-copy">Share your daily score, compare takes, report bugs, and help shape future updates.</p>
+    <p class="ft-copy">The daily vault is the same for everyone, so keep today's exact hands, shop offers, and solution paths spoiler-free.</p>
+    <div class="modal-actions">
+      <a class="btn" id="cmJoin" href="https://discord.gg/hCkcQ2mwH" target="_blank" rel="noopener noreferrer">Join Discord</a>
+      <a class="btn" id="cmEmail" href="mailto:contact@playvaulture.com">Email Feedback</a>
+      <button class="btn ghost" id="cmClose" type="button">Close</button>
     </div>
   </div>
 </div>
@@ -1432,8 +1447,8 @@ function tutSkip(){ tls.set(TUT_SKIP_KEY,"1"); tutClose(); }
 /* overlay plumbing: ESC, focus trap, focus restore — shared by every modal */
 function showScrim(id){ const s=$(id); if(!s) return; s.classList.add("show"); s.setAttribute("aria-hidden","false"); document.addEventListener("keydown",tutKey,true); }
 function hideScrim(id){ const s=$(id); if(!s) return; s.classList.remove("show"); s.setAttribute("aria-hidden","true"); if(!tutAnyOpen()) document.removeEventListener("keydown",tutKey,true); }
-function tutAnyOpen(){ return ["tutFirstScrim","howtoScrim","tutGuide","lbScrim","profileScrim","nudgeScrim","gadgetScrim"].some(id=>$(id)&&$(id).classList.contains("show")); }
-function tutTopScrim(){ return ["gadgetScrim","tutGuide","profileScrim","nudgeScrim","lbScrim","howtoScrim","tutFirstScrim"].map(id=>$(id)).find(s=>s&&s.classList.contains("show")); }
+function tutAnyOpen(){ return ["tutFirstScrim","howtoScrim","tutGuide","lbScrim","profileScrim","nudgeScrim","gadgetScrim","communityScrim"].some(id=>$(id)&&$(id).classList.contains("show")); }
+function tutTopScrim(){ return ["gadgetScrim","tutGuide","profileScrim","nudgeScrim","lbScrim","howtoScrim","communityScrim","tutFirstScrim"].map(id=>$(id)).find(s=>s&&s.classList.contains("show")); }
 function restoreFocus(){ const el=TUT.lastFocus; TUT.lastFocus=null; if(el&&el.focus){ try{el.focus();}catch(e){} } }
 function tutKey(e){
   if(e.key==="Escape"){ e.preventDefault();
@@ -1442,13 +1457,14 @@ function tutKey(e){
     else if($("nudgeScrim").classList.contains("show")) nudgeLater();
     else if($("profileScrim").classList.contains("show")) closeProfile();
     else if($("lbScrim").classList.contains("show")) closeLeaderboard();
+    else if($("communityScrim").classList.contains("show")) closeCommunity();
     else if($("howtoScrim").classList.contains("show")){ hideScrim("howtoScrim"); restoreFocus(); }
     else if($("tutFirstScrim").classList.contains("show")){ tls.set(TUT_SKIP_KEY,"1"); hideScrim("tutFirstScrim"); restoreFocus(); }
     return;
   }
   if(e.key==="Tab"){
     const open=tutTopScrim(); if(!open) return;
-    const f=open.querySelectorAll('button:not([disabled]), input, [tabindex="0"]'); if(!f.length) return;
+    const f=open.querySelectorAll('a[href], button:not([disabled]), input, [tabindex="0"]'); if(!f.length) return;
     const first=f[0], last=f[f.length-1];
     if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
     else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
@@ -1470,6 +1486,12 @@ function openHowTo(){
   setTimeout(()=>{ const b=$("htStart"); if(b) b.focus({preventScroll:true}); },40);
 }
 function closeHowTo(){ hideScrim("howtoScrim"); restoreFocus(); }
+function openCommunity(){
+  TUT.lastFocus=document.activeElement;
+  showScrim("communityScrim");
+  setTimeout(()=>{ const b=$("cmJoin"); if(b) b.focus({preventScroll:true}); },40);
+}
+function closeCommunity(){ hideScrim("communityScrim"); restoreFocus(); }
 
 /* ============================================================= *
  *  PROFILE / IDENTITY  (`profileService` = seam to real auth)
@@ -1802,6 +1824,9 @@ function bindOnce(){
   $("introLb").onclick=openLeaderboard;
   $("lbBtn").onclick=openLeaderboard;
   $("lbClose").onclick=closeLeaderboard;
+  // community wiring (links out to Discord/email; no gameplay or account hooks)
+  $("introCommunity").onclick=openCommunity;
+  $("cmClose").onclick=closeCommunity;
   // profile wiring (optional; identity only — never gates play)
   $("profile").onclick=openProfile;
   $("pfClose").onclick=closeProfile;

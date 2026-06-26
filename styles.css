@@ -105,6 +105,8 @@ body::before{
 .btn.ghost{background:transparent; color:var(--ink); border-color:var(--ink); box-shadow:2px 2px 0 var(--ink);}
 .btn.ghost:hover{background:rgba(22,55,74,.07);}
 .btn.danger{background:var(--red); color:var(--paper); border-color:var(--red2);}
+/* Anchors styled as primary buttons (e.g. Community modal's Discord/email links). */
+a.btn{display:flex; align-items:center; justify-content:center; text-decoration:none; box-sizing:border-box;}
 .btn.danger:hover{background:var(--red2);}
 .btn.row{display:flex; align-items:center; justify-content:center; gap:9px;}
 .btn.sm{font-size:13px; padding:14px 12px;}
