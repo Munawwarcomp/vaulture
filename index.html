@@ -1198,12 +1198,16 @@ function drawShareCard(d){
 }
 
 function shareText(d){
-  const lockmap=d.locks.map(s=>s==="clear"?"■":s==="bust"?"✕":"□").join("");
-  return `${GAME_NAME} — Day ${DAY.dayNumber}\n`+
-    `Today's Take: $${fmt(d.score)} — ${d.rank}\n`+
-    `Locks ${lockmap}\n`+
-    `${d.cleared?"Vault cleared":d.status}\n`+
-    `Same vault. One run. No spoilers → ${URL_DISPLAY}`;
+  // Clean, challenge-focused message that reads well in iMessage/Discord/X and on clipboard.
+  // Spoiler-free: outcome + score + rank + best-move highlight only — never cards/shop/seed/path.
+  const lock=d.cleared?`Vault cleared · ${JOBS.length}/${JOBS.length}`:d.status; // d.status = "Busted on Lock X/5"
+  return `Vaulture Day ${DAY.dayNumber}\n`+
+    `💰 $${fmt(d.score)} · ${d.rank}\n`+
+    `🔐 ${lock}\n`+
+    (d.sig?`⚡ Best move: ${d.sigText}\n`:``)+
+    `\n`+
+    `Same vault. One run. Can you beat my take?\n`+
+    `https://playvaulture.com`;
 }
 async function onShare(){
   const d=resultData(); const text=shareText(d);
